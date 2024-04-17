@@ -1,15 +1,9 @@
-.. raw:: html
 
    <p align="center">
       <img src="docs/MSCI_logo.png" alt="logo" width="300" height="300">
    </p>
 
 
-.. image:: https://img.shields.io/pypi/v/msci.svg
-        :target: https://pypi.python.org/pypi/msci
-
-
-* Free software: MIT license
 * Official Documentation available at: https://msci.readthedocs.io.
 
 
