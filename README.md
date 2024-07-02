@@ -38,7 +38,7 @@ Here is a small example of using MSCI to calculate pairwise normalized spectral 
     from multiprocessing import Pool, cpu_count
     File= 'MSCA_Package/Tryptic_peptides/Dataset/msp_files/charge2_3myPrositLib.msp'
     mz_irt_df = read_msp_file(File)
-    g = MassContentInformation(mz_irt_df)
+    g = MCInfo(mz_irt_df)
     group = g.group_sequences(1,10, unit='Da')
     group = np.array(group, dtype=object)
     combin = process_data(group)
