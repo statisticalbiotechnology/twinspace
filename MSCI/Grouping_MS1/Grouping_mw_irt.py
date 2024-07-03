@@ -1,39 +1,56 @@
 import pandas as pd
+from scipy.spatial import cKDTree
 import numpy as np
-from itertools import combinations
 
 def make_data_compatible(index_df):
     data_tuples = [(index, row['MW'], row['iRT']) for index, row in index_df.iterrows()]
     return data_tuples
 
 compatible_data = make_data_compatible(mz_irt_df)
-def within_ppm(pair, ppm_tolerance1, tolerance2):
+
+def within_ppm(pair, ppm_tolerance1, ppm_tolerance2):
     return (
         abs(pair[0][1] - pair[1][1]) <= (pair[0][1] * ppm_tolerance1) / 1e6 and
-        abs(pair[0][2] - pair[1][2]) <= tolerance2
+        abs(pair[0][2] - pair[1][2]) <= ppm_tolerance2
     )
 
-def find_combinations_optimized(data, ppm_tolerance1, ppm_tolerance2):
+def find_combinations_kdtree(data, ppm_tolerance1, ppm_tolerance2):
     valid_combinations = []
-
+    
+    # Create numpy array for k-d tree
+    data_array = np.array([(mw, irt) for index, mw, irt in data])
+    
+    # Build k-d tree
+    tree = cKDTree(data_array)
+    
+    # Pre-compute the square of tolerances to avoid repetitive computation
+    ppm_tolerance1_sq = (ppm_tolerance1 / 1e6)**2
+    ppm_tolerance2_sq = ppm_tolerance2**2
+    
     # Iterate through the data to find valid combinations
     for i in range(len(data)):
-        print(i)
-        for j in range(len(data)):
-            # Check if the pair satisfies the tolerance conditions
-            if within_ppm((data[i], data[j]), ppm_tolerance1, ppm_tolerance2):
-                valid_combinations.append((data[i], data[j]))
+        current_point = data_array[i]
+        # Calculate a combined radius tolerance for the query
+        radius = np.sqrt((ppm_tolerance1_sq * current_point[0]**2) + ppm_tolerance2_sq)
+        indices = tree.query_ball_point(current_point, radius)
+        
+        for j in indices:
+            if i < j:  # Avoid self-pairing and duplicate pairs
+                pair = (data[i], data[j])
+                if within_ppm(pair, ppm_tolerance1, ppm_tolerance2):
+                    valid_combinations.append(pair)
 
     return valid_combinations
 
 ppm_tolerance1 = 5
 ppm_tolerance2 = 5
 
-result_ppm = find_combinations_optimized(compatible_data, ppm_tolerance1, ppm_tolerance2)
+# Adjust the slice to a manageable size for testing
+result_ppm = find_combinations_kdtree(compatible_data, ppm_tolerance1, ppm_tolerance2)
 
-# Calculate the elapsed time
+# Convert pairs to a sorted tuple to avoid duplicates
+unique_result_ppm = list({tuple(sorted(pair)) for pair in result_ppm})
 
-unique_result_ppm = list(set(result_ppm))
-
-
-
+# Print the result
+print(f"Original result length: {len(result_ppm)}")
+print(f"Unique result length: {len(unique_result_ppm)}")
