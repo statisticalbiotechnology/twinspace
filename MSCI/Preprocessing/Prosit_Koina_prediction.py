@@ -79,7 +79,7 @@ def get_prosit_predictions(peptides, charges, collision_energies):
                 "name": "peptide_sequences",
                 "shape": [len(peptides), 1],
                 "datatype": "BYTES",
-                "data": peptides
+                "data": list(peptides)
             },
             {
                 "name": "collision_energies",
@@ -145,13 +145,44 @@ def get_prosit_predictions(peptides, charges, collision_energies):
         print(response.text)
         return None
 
-def format_msp(peptide, charge, collision_energy, mz_values, intensities):
+def get_irt_predictions(peptides):
+    # Construct the request body
+    request_body = {
+        "id": "test_id",
+        "inputs": [
+            {
+                "name": "peptide_sequences",
+                "shape": [len(peptides), 1],
+                "datatype": "BYTES",
+                "data": peptides
+            }
+        ]
+    }
+
+    # Define the URL for the model endpoint
+    url = "https://koina.wilhelmlab.org/v2/models/Prosit_2019_irt/infer"
+
+    # Send the POST request
+    response = requests.post(url, json=request_body)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        predictions = response.json()
+        irt_values = predictions['outputs'][0]['data']
+        return irt_values
+    else:
+        print(f"Request failed with status code {response.status_code}")
+        print(response.text)
+        return None
+
+def format_msp(peptide, charge, collision_energy, mz_values, intensities, irt):
     mw = calculate_molecular_weight_with_modifications(peptide)
     mz = (mw + (charge)) / charge  # Correct m/z calculation
     header = f"Name: {peptide}/{charge}\n"
     pepmass = f"MW: {mz:.6f}\n"
     collision_energy_line = f"Collision_energy: {collision_energy}\n"
-    
+    irt_line = f"iRT: {irt:.6f}\n"
+
     # Combine mz_values and intensities, filter out -1.00 entries, and then sort by mz_values
     sorted_peaks = sorted(
         (mz, intensity) for mz, intensity in zip(mz_values, intensities) if mz != -1.00 and intensity != -1.000000
@@ -169,27 +200,48 @@ def format_msp(peptide, charge, collision_energy, mz_values, intensities):
     else:
         max_intensity = 1
         normalized_intensities = []
-    
+
     for (mz, _), intensity in zip(sorted_peaks, normalized_intensities):
         peaks += f"{mz:.2f}\t{intensity:.6f}\n"
-    
-    return f"{header}{pepmass}{collision_energy_line}{peaks_header}{peaks}\n"
 
-def save_to_msp(df, filename):
-    with open(filename, 'w') as file:
+    return f"{header}{pepmass}{collision_energy_line}{irt_line}{peaks_header}{peaks}\n"
+
+def save_to_msp(df, filename, irt_values):
+    with open(filename, 'a') as file:
         for index, row in df.iterrows():
-            msp_entry = format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'])
+            irt = irt_values[index]
+            msp_entry = format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt)
             file.write(msp_entry)
 
-# Example usage with a list of peptides and their respective charges and collision energies
-peptides = ["MAAVEAAAEPVTVVAAVGPK", "YPPGPLPLPGLGNLLHVDFQNTPYCFDQLR", "SQGVILSR"]
-charges = [2, 2, 2]
-collision_energies = [25, 30, 30]
+# Initialize the MSP file (clear existing content)
+with open('peptides.msp', 'w') as file:
+    file.write("")
 
-# Get predictions from Prosit model
-df = get_prosit_predictions(peptides, charges, collision_energies)
+peptides = df_peptides['peptide'].tolist()
+batch_size = 1000
 
-if df is not None:
-    # Save the DataFrame to an MSP file
-    save_to_msp(df, 'peptides.msp')
-    print("MSP file saved successfully.")
+# Process peptides with specified charges
+def process_peptides_with_charge(peptides, charge, filename):
+    for start in range(0, len(peptides), batch_size):
+        batch_peptides = peptides[start:start + batch_size]
+        charges = [charge] * len(batch_peptides)
+        collision_energies = [28] * len(batch_peptides)
+
+        # Get iRT predictions
+        irt_values = get_irt_predictions(batch_peptides)
+
+        # Get Prosit predictions
+        df = get_prosit_predictions(batch_peptides, charges, collision_energies)
+
+        if df is not None and irt_values is not None:
+            # Append the DataFrame to the MSP file with iRT values
+            save_to_msp(df, filename, irt_values)
+            print(f"Processed batch {start // batch_size + 1} with charge {charge}")
+
+# Process with charge 2
+process_peptides_with_charge(peptides, 2, 'peptides.msp')
+
+# Process with charge 3
+process_peptides_with_charge(peptides, 3, 'peptides.msp')
+
+print("MSP file saved successfully.")
