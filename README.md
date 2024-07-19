@@ -18,7 +18,6 @@ Installation:
 prerequisites:
 
 - Python 3.8 -3.11
-- Anaconda
 - Matchms
 
 
