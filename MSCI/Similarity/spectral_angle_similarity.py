@@ -40,94 +40,77 @@ class joinPeaks:
         self.ppm = ppm
 
     def match(self, x, y):
-        # Merge dataframes
-        self.mz_index = {}
-        merged = pd.merge(x, y, on='mz', how='outer', suffixes=('_x', '_y'))
-        merged = merged.sort_values('mz')
+        # Initialize the result lists
+        x_matched = []
+        y_matched = []
 
-        # Assign indices based on tolerance or ppm matching
-        indices = []
-        for index, row in merged.iterrows():
-            matched = False
-            for mz, idx in self.mz_index.items():
-                ppm_tolerance = mz * self.ppm * 1e-6
-                if abs(row['mz'] - mz) <= max(self.tolerance, ppm_tolerance):
-                    indices.append(idx)
-                    matched = True
+        # Create a list to keep track of matched y indices
+        matched_y_indices = set()
+
+        # Calculate ppm tolerance for each mz value in x and y
+        ppm_tolerance_x = x['mz'] * self.ppm * 1e-6
+
+        # Perform the matching
+        for i, x_row in x.iterrows():
+            mz_x = x_row['mz']
+            intensity_x = x_row['intensities']
+            match_found = False
+
+            for j, y_row in y.iterrows():
+                if j in matched_y_indices:
+                    continue
+
+                mz_y = y_row['mz']
+                intensity_y = y_row['intensities']
+                ppm_tolerance_y = mz_y * self.ppm * 1e-6
+
+                if abs(mz_y - mz_x) <= self.tolerance or abs(mz_y - mz_x) <= ppm_tolerance_x[i] or abs(mz_y - mz_x) <= ppm_tolerance_y:
+                    x_matched.append([mz_x, intensity_x])
+                    y_matched.append([mz_y, intensity_y])
+                    matched_y_indices.add(j)
+                    match_found = True
                     break
-            if not matched:
-                new_index = len(self.mz_index)
-                self.mz_index[row['mz']] = new_index
-                indices.append(new_index)
 
-        merged['index'] = indices
+            if not match_found:
+                x_matched.append([mz_x, intensity_x])
+                y_matched.append([np.nan, np.nan])
 
-        # Define a custom filter to deduplicate while keeping up to two unique intensities per index
-        def deduplicate(group):
-            # If there are not more than two unique values, return the group
-            if group['intensities_x'].nunique() <= 1 and group['intensities_y'].nunique() <= 1:
-                return group.head(2)  # Keep at most two rows
-            else:
-                # Try to keep up to one of each unique intensity per column
-                deduped = pd.concat([
-                    group.drop_duplicates(subset=['intensities_x']).head(1),
-                    group.drop_duplicates(subset=['intensities_y']).head(1)
-                ]).drop_duplicates()
-                return deduped
+        # Add unmatched rows from y
+        for j, y_row in y.iterrows():
+            if j not in matched_y_indices:
+                mz_y = y_row['mz']
+                intensity_y = y_row['intensities']
+                x_matched.append([np.nan, np.nan])
+                y_matched.append([mz_y, intensity_y])
 
-        # Apply the custom deduplication logic
-        filtered = merged.groupby('index').apply(deduplicate).reset_index(drop=True)
+        # Convert to DataFrames
+        x_matched_df = pd.DataFrame(x_matched, columns=['mz', 'intensities'])
+        y_matched_df = pd.DataFrame(y_matched, columns=['mz', 'intensities'])
 
-        # Separate back into x and y dataframes
-        x_filtered = filtered[['mz', 'intensities_x', 'index']].rename(columns={'intensities_x': 'intensities'})
-        y_filtered = filtered[['mz', 'intensities_y', 'index']].rename(columns={'intensities_y': 'intensities'})
+        # Set index to have the same structure
+        x_matched_df['index'] = range(len(x_matched_df))
+        y_matched_df['index'] = range(len(y_matched_df))
 
-        # Handle NaN intensities and update m/z values accordingly
-        x_filtered['intensities'] = x_filtered['intensities'].where(pd.notnull(x_filtered['intensities']), None)
-        y_filtered['intensities'] = y_filtered['intensities'].where(pd.notnull(y_filtered['intensities']), None)
-        x_filtered['mz'] = np.where(x_filtered['intensities'].isna(), None, x_filtered['mz'])
-        y_filtered['mz'] = np.where(y_filtered['intensities'].isna(), None, y_filtered['mz'])
+        x_matched_df.set_index('index', inplace=True)
+        y_matched_df.set_index('index', inplace=True)
 
-        return x_filtered, y_filtered
+        return x_matched_df, y_matched_df
 
 
-def process_combin(pair, spectra, tolerance, ppm):
-    matcher = joinPeaks(tolerance=tolerance, ppm=ppm)
-    # Unpack the pair into individual indices
-    x_idx, y_idx = pair
+result = []
+
+for index_pair in index_array:
+    i, j = index_pair
     
-    # Check if either spectra[x_idx] or spectra[y_idx] is None
-    if spectra[x_idx] is None or spectra[y_idx] is None:
-        # Handle the case where either spectra[x_idx] or spectra[y_idx] is None
-        return np.nan
+    x = spectra[i]
+    y = spectra[j]
     
-    # Extract the data for the two spectra
-    x_data = {"mz": spectra[x_idx].peaks.mz, "intensities": spectra[x_idx].peaks.intensities}
-    y_data = {"mz": spectra[y_idx].peaks.mz, "intensities": spectra[y_idx].peaks.intensities}
-    # Convert the data to DataFrames
-    x = pd.DataFrame(x_data)
-    y = pd.DataFrame(y_data)
+    x = pd.DataFrame({'mz': x.peaks.mz, 'intensities': x.peaks.intensities})
+    y = pd.DataFrame({'mz': y.peaks.mz, 'intensities': y.peaks.intensities})
     
-    # Match the peaks in the two spectra
+    matcher = joinPeaks(tolerance=0, ppm=10)
     x, y = matcher.match(x, y)
-    print(x)
-    # Compute the angle between the two spectra
-    angle = nspectraangle(x, y, m=0, n=0.5, na_rm=True)    
-    return angle
-
-
-
-
-from functools import partial
-def process_combin_wrapper(combin, spectra, tolerance, ppm):
-    return process_combin(combin, spectra, tolerance ,ppm)
-def saveList(myList,filename):
-    # the filename should mention the extension 'npy'
-    np.save(filename,myList)
-    print("Saved successfully!")
     
-
-def loadList(filename):
-    # the filename should mention the extension 'npy'
-    tempNumpyArray=np.load(filename, allow_pickle=True)
-    return tempNumpyArray.tolist()
+    angle = nspectraangle(x, y, m=0, n=0.5)
+    print(angle)
+    result.append({"x_idx": i, "y_idx": j, "angle": angle})
