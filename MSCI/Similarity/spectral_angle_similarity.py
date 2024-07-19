@@ -97,20 +97,37 @@ class joinPeaks:
         return x_matched_df, y_matched_df
 
 
-result = []
+def process_spectra_pairs(chunk, spectra, tolerance=0, ppm=10, m=0, n=0.5):
+    """
+    Processes pairs of spectra, matches their peaks, and calculates the angle between them.
 
-for index_pair in index_array:
-    i, j = index_pair
-    
-    x = spectra[i]
-    y = spectra[j]
-    
-    x = pd.DataFrame({'mz': x.peaks.mz, 'intensities': x.peaks.intensities})
-    y = pd.DataFrame({'mz': y.peaks.mz, 'intensities': y.peaks.intensities})
-    
-    matcher = joinPeaks(tolerance=0, ppm=10)
-    x, y = matcher.match(x, y)
-    
-    angle = nspectraangle(x, y, m=0, n=0.5)
-    print(angle)
-    result.append({"x_idx": i, "y_idx": j, "angle": angle})
+    Parameters:
+    chunk (list): List of index pairs (tuples) to be processed.
+    spectra (list): List of spectra objects.
+    tolerance (int): Tolerance for peak matching.
+    ppm (int): Parts per million for peak matching.
+    m (float): Parameter for angle calculation.
+    n (float): Parameter for angle calculation.
+
+    Returns:
+    list: List of dictionaries containing the indices of the spectra and their calculated angle.
+    """
+    result = []
+
+    for index_pair in chunk:
+        i, j = index_pair
+
+        x = spectra[i]
+        y = spectra[j]
+
+        x_df = pd.DataFrame({'mz': x.peaks.mz, 'intensities': x.peaks.intensities})
+        y_df = pd.DataFrame({'mz': y.peaks.mz, 'intensities': y.peaks.intensities})
+
+        matcher = joinPeaks(tolerance=tolerance, ppm=ppm)
+        x_matched, y_matched = matcher.match(x_df, y_df)
+
+        angle = nspectraangle(x_matched, y_matched, m=m, n=n)
+        print(angle)
+        result.append({"x_idx": i, "y_idx": j, "angle": angle})
+
+    return result
