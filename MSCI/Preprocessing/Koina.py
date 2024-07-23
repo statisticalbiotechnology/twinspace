@@ -37,6 +37,7 @@ class PeptideProcessor:
                     mod_mass = MOD_MASSES.get(mod, 0.0)
                     total_mass += mod_mass
             else:
+                # Print a warning for unknown amino acids
                 print(f"Unknown amino acid: {aa}")
                 return None
         total_mass += MASSES["C_TERMINUS"]
