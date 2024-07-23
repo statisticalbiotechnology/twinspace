@@ -41,15 +41,3 @@ def find_combinations_kdtree(data, ppm_tolerance1, ppm_tolerance2):
 
     return valid_combinations
 
-ppm_tolerance1 = 5
-ppm_tolerance2 = 5
-
-# Adjust the slice to a manageable size for testing
-result_ppm = find_combinations_kdtree(compatible_data, ppm_tolerance1, ppm_tolerance2)
-
-# Convert pairs to a sorted tuple to avoid duplicates
-unique_result_ppm = list({tuple(sorted(pair)) for pair in result_ppm})
-
-# Print the result
-print(f"Original result length: {len(result_ppm)}")
-print(f"Unique result length: {len(unique_result_ppm)}")
