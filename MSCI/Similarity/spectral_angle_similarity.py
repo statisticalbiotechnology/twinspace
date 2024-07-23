@@ -1,21 +1,7 @@
 import numpy as np
 import pandas as pd 
 
-"""
-ndotproduct(x, y, m=0, n=0.5, na_rm=True): Computes the normalized dot product between two spectra x and y. The function uses a weighting mechanism defined by _weightxy to weight the m/z and intensity values of the spectra.
-nspectraangle(x, y, m=0, n=0.5, na_rm=True): Calculates the normalized spectral angle between two spectra. The angle is derived from the normalized dot product.
-_weightxy(x, y, m=0, n=0.5): A helper function that returns weighted values based on the provided m/z (x) and intensity (y) values.
 
-The joinPeaks class is designed for matching peaks between two spectra based on a specified tolerance and parts per million (ppm).
-Upon initialization, the class sets the tolerance and ppm values and initializes an empty dictionary mz_index to store m/z values and their corresponding indices.
-The match method merges two spectra, sorts them by m/z values, and assigns indices to peaks. Peaks within the specified tolerance are matched and assigned the same index. The method then filters out duplicated indices with NaN intensities and updates m/z values where intensity is missing. The final matched spectra are returned as two separate data frames.
-Usage:
-# For functions
-dot_product_value = ndotproduct(x, y)
-angle_value = nspectraangle(x, y)
-joiner = joinPeaks(tolerance=value1, ppm=value2)
-matched_x, matched_y = joiner.match(x, y)
-"""
 def ndotproduct(x, y, m=0, n=0.5, na_rm=True):
     wx = _weightxy(x.iloc[:,0], x.iloc[:,1], m, n)
     wy = _weightxy(y.iloc[:,0], y.iloc[:,1], m, n)
