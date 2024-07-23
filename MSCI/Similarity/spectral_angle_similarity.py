@@ -97,22 +97,14 @@ class joinPeaks:
         return x_matched_df, y_matched_df
 
 
-def process_spectra_pairs(chunk, spectra, tolerance=0, ppm=10, m=0, n=0.5):
+def process_spectra_pairs(chunk, spectra, mz_irt_df, unique_result_ppm, tolerance=0, ppm=10, m=0, n=0.5):
     """
-    Processes pairs of spectra, matches their peaks, and calculates the angle between them.
 
-    Parameters:
-    chunk (list): List of index pairs (tuples) to be processed.
-    spectra (list): List of spectra objects.
-    tolerance (int): Tolerance for peak matching.
-    ppm (int): Parts per million for peak matching.
-    m (float): Parameter for angle calculation.
-    n (float): Parameter for angle calculation.
 
     Returns:
-    list: List of dictionaries containing the indices of the spectra and their calculated angle.
+    pd.DataFrame: DataFrame containing indices of the spectra, calculated angle, and similarity score.
     """
-    result = []
+    results = []
 
     for index_pair in chunk:
         i, j = index_pair
@@ -127,7 +119,22 @@ def process_spectra_pairs(chunk, spectra, tolerance=0, ppm=10, m=0, n=0.5):
         x_matched, y_matched = matcher.match(x_df, y_df)
 
         angle = nspectraangle(x_matched, y_matched, m=m, n=n)
-        print(angle)
-        result.append({"x_idx": i, "y_idx": j, "angle": angle})
+        
+        # Find the corresponding unique result ppm pair
+        for (index1, mw1, irt1), (index2, mw2, irt2) in unique_result_ppm:
+            if (i == index1 and j == index2) or (i == index2 and j == index1):
+                similarity_score = angle # You can replace this with your own similarity score calculation if needed
+                results.append({
+                    'index1': index1,
+                    'index2': index2,
+                    'column1_peptide': mz_irt_df.loc[index1, 'Name'],
+                    'column2_peptide': mz_irt_df.loc[index2, 'Name'],
+                    'MW1': mw1,
+                    'MW2': mw2,
+                    'iRT1': irt1,
+                    'iRT2': irt2,
+                    'angle': angle,
+                    'similarity_score': similarity_score
+                })
 
-    return result
+    return pd.DataFrame(results)
