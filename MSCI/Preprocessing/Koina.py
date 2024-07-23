@@ -11,10 +11,11 @@ MOD_MASSES = {'[UNIMOD:4]': 15.99491}  # Example modification mass
 MASSES = {'N_TERMINUS': 1.007825, 'C_TERMINUS': 17.00274}
 
 class PeptideProcessor:
-    def __init__(self, peptide_file, ce, charge):
+    def __init__(self, peptide_file, ce, charge, model="Prosit_2020_intensity_HCD"):
         self.peptide_file = peptide_file
         self.ce = ce
         self.charge = charge
+        self.model = model
         self.peptides = self.read_peptides_from_file(peptide_file)
         self.df_peptides = pd.DataFrame(self.peptides, columns=["Peptide"]).drop_duplicates()
 
@@ -42,7 +43,6 @@ class PeptideProcessor:
         return total_mass
 
     def get_prosit_predictions(self, peptides):
-        print("Fetching Prosit predictions...")
         request_body = {
             "id": "batch_request",
             "inputs": [
@@ -66,10 +66,9 @@ class PeptideProcessor:
                 }
             ]
         }
-        url = "https://koina.wilhelmlab.org/v2/models/Prosit_2020_intensity_HCD/infer"
+        url = f"https://koina.wilhelmlab.org/v2/models/{self.model}/infer"
         response = requests.post(url, json=request_body)
         if response.status_code == 200:
-            print("Received response from Prosit.")
             predictions = response.json()
             try:
                 intensities = predictions['outputs'][2]['data']
@@ -89,14 +88,12 @@ class PeptideProcessor:
                     'mz_values': peptide_mz_values,
                     'intensities': peptide_intensities
                 })
-            print("Prosit predictions processed.")
             return pd.DataFrame(rows)
         else:
             print(f"Error: Failed to get Prosit predictions. Status code: {response.status_code}")
             return None
 
     def save_to_msp(self, df, file_path):
-        print(f"Saving predictions to {file_path}...")
         with open(file_path, 'w') as file:
             for _, row in df.iterrows():
                 mw = self.calculate_peptide_mass(row['peptide_sequence'])
@@ -104,10 +101,8 @@ class PeptideProcessor:
                 header = f"Name: {row['peptide_sequence']}/{self.charge}\nMW: {mz:.6f}\nCollision_energy: {self.ce}\n"
                 peaks = "".join(f"{mz:.2f}\t{intensity:.6f}\n" for mz, intensity in zip(row['mz_values'], row['intensities']) if mz != -1.00 and intensity != -1.000000)
                 file.write(f"{header}Num peaks: {len(peaks)}\n{peaks}\n")
-        print("File saved successfully.")
 
     def process(self, output_file='output.msp'):
-        print("Starting peptide processing...")
         df = self.get_prosit_predictions(self.peptides)
         if df is not None:
             self.save_to_msp(df, output_file)
