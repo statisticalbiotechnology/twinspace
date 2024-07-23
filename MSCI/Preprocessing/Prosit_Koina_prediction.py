@@ -2,6 +2,14 @@ import requests
 import pandas as pd
 import re
 
+# Dummy data for AA_MASSES, MOD_MASSES, MASSES to avoid errors
+AA_MASSES = {'A': 71.03711, 'R': 156.10111, 'N': 114.04293, 'D': 115.02694, 'C': 103.00919,
+             'E': 129.04259, 'Q': 128.05858, 'G': 57.02146, 'H': 137.05891, 'I': 113.08406,
+             'L': 113.08406, 'K': 128.09496, 'M': 131.04049, 'F': 147.06841, 'P': 97.05276,
+             'S': 87.03203, 'T': 101.04768, 'W': 186.07931, 'Y': 163.06333, 'V': 99.06841}
+MOD_MASSES = {'[UNIMOD:4]': 15.99491}  # Example modification mass
+MASSES = {'N_TERMINUS': 1.007825, 'C_TERMINUS': 17.00274}
+
 class PeptideProcessor:
     def __init__(self, peptide_file, ce, charge):
         self.peptide_file = peptide_file
@@ -9,11 +17,12 @@ class PeptideProcessor:
         self.charge = charge
         self.peptides = self.read_peptides_from_file(peptide_file)
         self.df_peptides = pd.DataFrame(self.peptides, columns=["Peptide"]).drop_duplicates()
-        
+
     def read_peptides_from_file(self, file_path):
         with open(file_path, "r") as file:
             lines = file.readlines()
         lines = [line.strip() for line in lines if line.strip()]
+        print(f"Peptides read from file: {lines}")
         return lines
 
     def calculate_peptide_mass(self, peptide_sequence):
