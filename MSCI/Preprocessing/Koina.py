@@ -133,13 +133,12 @@ AA_MOD = {**AA_MASSES, **AA_MOD_MASSES}
 import re
 
 class PeptideProcessor:
-    def __init__(self, irt_model_url, intensity_model_url, output_path, output_name, charge, collision_energy):
-        self.irt_model_url = irt_model_url
-        self.intensity_model_url = intensity_model_url
-        self.output_path = output_path
-        self.output_name = output_name
-        self.charge = charge
+    def __init__(self, input_file, collision_energy, charge, model_intensity, model_irt):
+        self.input_file = input_file
         self.collision_energy = collision_energy
+        self.charge = charge
+        self.model_intensity_url = f"https://koina.wilhelmlab.org/v2/models/{model_intensity}/infer"
+        self.model_irt_url = f"https://koina.wilhelmlab.org/v2/models/{model_irt}/infer" if model_irt else None
 
     def calculate_peptide_mass(self, peptide_sequence, aa_masses, mod_masses, masses):
         total_mass = masses["N_TERMINUS"]
@@ -186,7 +185,7 @@ class PeptideProcessor:
             ]
         }
 
-        response = requests.post(self.intensity_model_url, json=request_body)
+        response = requests.post(self.model_intensity_url, json=request_body)
 
         if response.status_code == 200:
             predictions = response.json()
@@ -218,6 +217,9 @@ class PeptideProcessor:
             return None
 
     def get_irt_predictions(self, peptides):
+        if not self.model_irt_url:
+            return [0.0] * len(peptides)  # Return default iRT value if no model is specified
+
         request_body = {
             "id": "test_id",
             "inputs": [
@@ -230,7 +232,7 @@ class PeptideProcessor:
             ]
         }
 
-        response = requests.post(self.irt_model_url, json=request_body)
+        response = requests.post(self.model_irt_url, json=request_body)
 
         if response.status_code == 200:
             predictions = response.json()
@@ -266,9 +268,10 @@ class PeptideProcessor:
             msp_entry = self.format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt, aa_masses, mod_masses, masses)
             file.write(msp_entry)
 
-    def process_peptides_with_charge(self, peptides, aa_masses, mod_masses, masses):
+    def process(self, output_filename, aa_masses, mod_masses, masses):
+        peptides = pd.read_csv(self.input_file, header=None)[0].tolist()
         batch_size = 100
-        with open(f"{self.output_path}/{self.output_name}", 'w') as file:
+        with open(output_filename, 'w') as file:
             for start in range(0, len(peptides), batch_size):
                 batch_peptides = peptides[start:start + batch_size]
                 irt_values = self.get_irt_predictions(batch_peptides)
