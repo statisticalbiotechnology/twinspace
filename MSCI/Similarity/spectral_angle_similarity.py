@@ -97,7 +97,7 @@ class joinPeaks:
         return x_matched_df, y_matched_df
 
 
-def process_spectra_pairs(chunk, spectra, mz_irt_df, unique_result_ppm, tolerance=0, ppm=10, m=0, n=0.5):
+def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n=0.5):
     """
 
 
