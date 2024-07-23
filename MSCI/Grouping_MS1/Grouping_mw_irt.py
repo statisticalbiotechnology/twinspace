@@ -41,3 +41,24 @@ def find_combinations_kdtree(data, ppm_tolerance1, ppm_tolerance2):
 
     return valid_combinations
 
+def process_peptide_combinations(mz_irt_df, ppm_tolerance1, ppm_tolerance2):
+    compatible_data = make_data_compatible(mz_irt_df)
+    result_ppm = find_combinations_kdtree(compatible_data, ppm_tolerance1, ppm_tolerance2)
+    unique_result_ppm = list({tuple(sorted(pair)) for pair in result_ppm})
+    
+    # Create a DataFrame for the results
+    results = []
+    for (index1, mw1, irt1), (index2, mw2, irt2) in unique_result_ppm:
+        results.append({
+            'index1': index1,
+            'index2': index2,
+            'column1_peptide': mz_irt_df.loc[index1, 'Name'],
+            'column2_peptide': mz_irt_df.loc[index2, 'Name'],
+            'MW1': mw1,
+            'MW2': mw2,
+            'iRT1': irt1,
+            'iRT2': irt2
+        })
+
+    results_df = pd.DataFrame(results)
+    return results_df
