@@ -21,9 +21,8 @@ def read_msp_file(filename):
                 current_spectrum = {'Name': line.split('Name: ')[1]}
             elif line.startswith('MW: '):
                 current_spectrum['MW'] = float(line.split('MW: ')[1])
-            elif line.startswith('Comment: '):
-                comment = line.split('Comment: ')[1]
-                current_spectrum['iRT'] = float(comment.split(' iRT=')[1].split(' ')[0])
+            elif line.startswith('iRT: '):
+                current_spectrum['iRT'] = float(line.split('iRT: ')[1])
 
     if current_spectrum:
         spectra.append(current_spectrum)
