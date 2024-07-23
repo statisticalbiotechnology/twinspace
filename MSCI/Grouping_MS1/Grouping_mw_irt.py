@@ -69,10 +69,10 @@ def process_peptide_combinations(mz_irt_df, tolerance1, tolerance2, use_ppm=True
             'index2': index2,
             'peptide 1': mz_irt_df.loc[index1, 'Name'],
             'peptide 2': mz_irt_df.loc[index2, 'Name'],
-            'm/z  1': mz_irt_df.loc[i, 'MW'],
-            'm/z 2': mz_irt_df.loc[j, 'MW'],
-            'iRT 1': mz_irt_df.loc[i, 'iRT'],
-            'iRT 2': mz_irt_df.loc[j, 'iRT'],
+            'm/z  1': mz_irt_df.loc[index1, 'MW'],
+            'm/z 2': mz_irt_df.loc[index2, 'MW'],
+            'iRT 1': mz_irt_df.loc[index1, 'iRT'],
+            'iRT 2': mz_irt_df.loc[index2, 'iRT'],
         })
 
     results_df = pd.DataFrame(results)
