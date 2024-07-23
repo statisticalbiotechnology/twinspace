@@ -23,7 +23,7 @@ prerequisites:
 Implementation and example :
 ==================
 
-**Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk?usp=sharing) to open the notebook in Google Colab.
+**Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk?usp=sharing) 
 
 
 
