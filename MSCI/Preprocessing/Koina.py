@@ -265,6 +265,11 @@ class PeptideProcessor:
             peaks += f"{mz:.2f}\t{intensity:.6f}\n"
 
         return f"{header}{pepmass}{collision_energy_line}{irt_line}{peaks_header}{peaks}\n"
+    def save_to_msp(df, file, irt_values):
+        for index, row in df.iterrows():
+            irt = irt_values[index]
+            msp_entry = format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt)
+            file.write(msp_entry)
     def process(self, output_file='output.msp'):
         df = self.get_prosit_predictions(self.peptides)
         if df is not None:
