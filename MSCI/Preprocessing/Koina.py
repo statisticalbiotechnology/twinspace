@@ -132,33 +132,6 @@ AA_MOD = {**AA_MASSES, **AA_MOD_MASSES}
 
 import re
 
-def calculate_peptide_mass(peptide_sequence, aa_masses, mod_masses, masses):
-    # Initialize the mass with the N-terminus mass
-    total_mass = masses["N_TERMINUS"]
-
-    # Regex to find amino acids and modifications
-    pattern = re.compile(r'([A-Z])(\[UNIMOD:\d+\])?')
-
-    # Iterate through the peptide sequence
-    for match in pattern.finditer(peptide_sequence):
-        aa = match.group(1)
-        mod = match.group(2)
-        
-        if aa in aa_masses:
-            total_mass += aa_masses[aa]
-            if mod:
-                mod_mass = mod_masses.get(mod, 0.0)
-                total_mass += mod_mass
-        else:
-            print(f"Unknown amino acid: {aa}")
-            return None
-    
-    # Add the mass of the C-terminus
-    total_mass += masses["C_TERMINUS"]
-
-    return total_mass
-
-
 class PeptideProcessor:
     def __init__(self, peptide_file, ce, charge, model="Prosit_2020_intensity_HCD"):
         self.peptide_file = peptide_file
@@ -243,21 +216,18 @@ class PeptideProcessor:
             print(f"Error: Failed to get Prosit predictions. Status code: {response.status_code}")
             return None
 
-    def format_msp(peptide, charge, collision_energy, mz_values, intensities, irt):
-        # Assuming the calculate_molecular_weight_with_modifications function is defined elsewhere
+    def format_msp(self, peptide, charge, collision_energy, mz_values, intensities, irt):
         mw = calculate_peptide_mass(peptide, AA_MASSES, MOD_MASSES, MASSES)
-        mz = (mw + (charge * 1.007276)) / charge  # Correct m/z calculation
+        mz = (mw + (charge * 1.007276)) / charge
         header = f"Name: {peptide}/{charge}\n"
         pepmass = f"MW: {mz:.6f}\n"
         collision_energy_line = f"Collision_energy: {collision_energy}\n"
         irt_line = f"iRT: {irt:.6f}\n"
 
-        # Combine mz_values and intensities, filter out -1.00 entries, and then sort by mz_values
         sorted_peaks = sorted(
             (mz, intensity) for mz, intensity in zip(mz_values, intensities) if mz != -1.00 and intensity != -1.000000
         )
 
-        # Update the number of valid peaks
         num_peaks = len(sorted_peaks)
         peaks_header = f"Num peaks: {num_peaks}\n"
 
@@ -266,14 +236,18 @@ class PeptideProcessor:
             peaks += f"{mz:.2f}\t{intensity:.6f}\n"
 
         return f"{header}{pepmass}{collision_energy_line}{irt_line}{peaks_header}{peaks}\n"
-    def save_to_msp(df, file, irt_values):
-        for index, row in df.iterrows():
-            irt = irt_values[index]
-            msp_entry = format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt)
-            file.write(msp_entry)
+
+    def save_to_msp(self, df, output_file, irt_values):
+        with open(output_file, "w") as file:
+            for index, row in df.iterrows():
+                irt = irt_values[index]
+                msp_entry = self.format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt)
+                file.write(msp_entry)
+
     def process(self, output_file='output.msp'):
         df = self.get_prosit_predictions(self.peptides)
         if df is not None:
-            self.save_to_msp(df, output_file)
+            irt_values = [0.0] * len(df)  # Replace with actual iRT values if available
+            self.save_to_msp(df, output_file, irt_values)
         else:
             print("No data to save.")
