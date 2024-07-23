@@ -52,8 +52,8 @@ def process_peptide_combinations(mz_irt_df, ppm_tolerance1, ppm_tolerance2):
         results.append({
             'index1': index1,
             'index2 ': index2,
-            'peptide x ': mz_irt_df.loc[index1, 'Name'],
-            'peptide y ': mz_irt_df.loc[index2, 'Name'],
+            'peptide 1 ': mz_irt_df.loc[index1, 'Name'],
+            'peptide 2 ': mz_irt_df.loc[index2, 'Name'],
             'MW1': mw1,
             'MW2': mw2,
             'iRT1': irt1,
