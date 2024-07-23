@@ -6,7 +6,6 @@ def make_data_compatible(index_df):
     data_tuples = [(index, row['MW'], row['iRT']) for index, row in index_df.iterrows()]
     return data_tuples
 
-compatible_data = make_data_compatible(mz_irt_df)
 
 def within_ppm(pair, ppm_tolerance1, ppm_tolerance2):
     return (
