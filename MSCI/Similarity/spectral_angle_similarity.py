@@ -99,7 +99,16 @@ class joinPeaks:
 
 def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n=0.5):
     """
+    Processes pairs of spectra, matches their peaks, and calculates the angle between them.
 
+    Parameters:
+    chunk (list): List of index pairs (tuples) to be processed.
+    spectra (list): List of spectra objects.
+    mz_irt_df (pd.DataFrame): DataFrame containing MW, iRT, and peptide names.
+    tolerance (int): Tolerance for peak matching.
+    ppm (int): Parts per million for peak matching.
+    m (float): Parameter for angle calculation.
+    n (float): Parameter for angle calculation.
 
     Returns:
     pd.DataFrame: DataFrame containing indices of the spectra, calculated angle, and similarity score.
@@ -120,21 +129,17 @@ def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n
 
         angle = nspectraangle(x_matched, y_matched, m=m, n=n)
         
-        # Find the corresponding unique result ppm pair
-        for (index1, mw1, irt1), (index2, mw2, irt2) in unique_result_ppm:
-            if (i == index1 and j == index2) or (i == index2 and j == index1):
-                similarity_score = angle # You can replace this with your own similarity score calculation if needed
-                results.append({
-                    'index1': index1,
-                    'index2': index2,
-                    'column1_peptide': mz_irt_df.loc[index1, 'Name'],
-                    'column2_peptide': mz_irt_df.loc[index2, 'Name'],
-                    'MW1': mw1,
-                    'MW2': mw2,
-                    'iRT1': irt1,
-                    'iRT2': irt2,
-                    'angle': angle,
-                    'similarity_score': similarity_score
-                })
+        # Extract the relevant information for the given index pair
+        results.append({
+            'index1': i,
+            'index2': j,
+            'column1_peptide': mz_irt_df.loc[i, 'Name'],
+            'column2_peptide': mz_irt_df.loc[j, 'Name'],
+            'MW1': mz_irt_df.loc[i, 'MW'],
+            'MW2': mz_irt_df.loc[j, 'MW'],
+            'iRT1': mz_irt_df.loc[i, 'iRT'],
+            'iRT2': mz_irt_df.loc[j, 'iRT'],
+            'similarity_score': angle,  
+        })
 
     return pd.DataFrame(results)
