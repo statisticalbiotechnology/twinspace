@@ -142,7 +142,7 @@ class PeptideProcessor:
         self.collision_energy = collision_energy
         self.charge = charge
         self.model_intensity_url = f"https://koina.wilhelmlab.org/v2/models/{model_intensity}/infer"
-        self.model_irt_url = f"https://koina.wilhelmlab.org/v2/models/{model_irt}/infer" if model_irt else None
+        self.model_irt_url = f"https://koina.wilhelmlab.org/v2/models/{model_irt}/infer" 
 
     def calculate_peptide_mass(self, peptide_sequence):
         total_mass = MASSES["N_TERMINUS"]
