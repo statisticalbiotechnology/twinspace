@@ -133,36 +133,32 @@ AA_MOD = {**AA_MASSES, **AA_MOD_MASSES}
 import re
 
 class PeptideProcessor:
-    def __init__(self, peptide_file, ce, charge, model="Prosit_2020_intensity_HCD"):
-        self.peptide_file = peptide_file
-        self.ce = ce
+    def __init__(self, irt_model_url, intensity_model_url, output_path, output_name, charge, collision_energy):
+        self.irt_model_url = irt_model_url
+        self.intensity_model_url = intensity_model_url
+        self.output_path = output_path
+        self.output_name = output_name
         self.charge = charge
-        self.model = model
-        self.peptides = self.read_peptides_from_file(peptide_file)
-        self.df_peptides = pd.DataFrame(self.peptides, columns=["Peptide"]).drop_duplicates()
+        self.collision_energy = collision_energy
 
-    def read_peptides_from_file(self, file_path):
-        with open(file_path, "r") as file:
-            lines = file.readlines()
-        lines = [line.strip() for line in lines if line.strip()]
-        return lines
-
-    def calculate_peptide_mass(self, peptide_sequence):
-        total_mass = MASSES["N_TERMINUS"]
+    def calculate_peptide_mass(self, peptide_sequence, aa_masses, mod_masses, masses):
+        total_mass = masses["N_TERMINUS"]
         pattern = re.compile(r'([A-Z])(\[UNIMOD:\d+\])?')
+
         for match in pattern.finditer(peptide_sequence):
             aa = match.group(1)
             mod = match.group(2)
-            if aa in AA_MASSES:
-                total_mass += AA_MASSES[aa]
+            
+            if aa in aa_masses:
+                total_mass += aa_masses[aa]
                 if mod:
-                    mod_mass = MOD_MASSES.get(mod, 0.0)
+                    mod_mass = mod_masses.get(mod, 0.0)
                     total_mass += mod_mass
             else:
-                # Print a warning for unknown amino acids
                 print(f"Unknown amino acid: {aa}")
                 return None
-        total_mass += MASSES["C_TERMINUS"]
+        
+        total_mass += masses["C_TERMINUS"]
         return total_mass
 
     def get_prosit_predictions(self, peptides):
@@ -179,7 +175,7 @@ class PeptideProcessor:
                     "name": "collision_energies",
                     "shape": [len(peptides), 1],
                     "datatype": "FP32",
-                    "data": [self.ce] * len(peptides)
+                    "data": [self.collision_energy] * len(peptides)
                 },
                 {
                     "name": "precursor_charges",
@@ -189,35 +185,62 @@ class PeptideProcessor:
                 }
             ]
         }
-        url = f"https://koina.wilhelmlab.org/v2/models/{self.model}/infer"
-        response = requests.post(url, json=request_body)
+
+        response = requests.post(self.intensity_model_url, json=request_body)
+
         if response.status_code == 200:
             predictions = response.json()
             try:
                 intensities = predictions['outputs'][2]['data']
                 mz_values = predictions['outputs'][1]['data']
             except KeyError:
-                print("Error: KeyError in the predictions data.")
                 return None
+            
             num_intensities_per_peptide = len(intensities) // len(peptides)
+
             rows = []
             for i, peptide in enumerate(peptides):
                 peptide_intensities = intensities[i * num_intensities_per_peptide : (i + 1) * num_intensities_per_peptide]
                 peptide_mz_values = mz_values[i * num_intensities_per_peptide : (i + 1) * num_intensities_per_peptide]
-                rows.append({
+                
+                row = {
                     'peptide_sequence': peptide,
                     'charge': self.charge,
-                    'collision_energy': self.ce,
+                    'collision_energy': self.collision_energy,
                     'mz_values': peptide_mz_values,
                     'intensities': peptide_intensities
-                })
-            return pd.DataFrame(rows)
+                }
+                rows.append(row)
+            
+            df = pd.DataFrame(rows)
+            return df
         else:
-            print(f"Error: Failed to get Prosit predictions. Status code: {response.status_code}")
             return None
 
-    def format_msp(self, peptide, charge, collision_energy, mz_values, intensities, irt):
-        mw = calculate_peptide_mass(peptide, AA_MASSES, MOD_MASSES, MASSES)
+    def get_irt_predictions(self, peptides):
+        request_body = {
+            "id": "test_id",
+            "inputs": [
+                {
+                    "name": "peptide_sequences",
+                    "shape": [len(peptides), 1],
+                    "datatype": "BYTES",
+                    "data": peptides
+                }
+            ]
+        }
+
+        response = requests.post(self.irt_model_url, json=request_body)
+
+        if response.status_code == 200:
+            predictions = response.json()
+            irt_values = predictions['outputs'][0]['data']
+            return irt_values
+        else:
+            return None
+
+    def format_msp(self, peptide, charge, collision_energy, mz_values, intensities, irt, aa_masses, mod_masses, masses):
+        mw = self.calculate_peptide_mass(peptide, aa_masses, mod_masses, masses)
         mz = (mw + (charge * 1.007276)) / charge
         header = f"Name: {peptide}/{charge}\n"
         pepmass = f"MW: {mz:.6f}\n"
@@ -237,17 +260,20 @@ class PeptideProcessor:
 
         return f"{header}{pepmass}{collision_energy_line}{irt_line}{peaks_header}{peaks}\n"
 
-    def save_to_msp(self, df, output_file, irt_values):
-        with open(output_file, "w") as file:
-            for index, row in df.iterrows():
-                irt = irt_values[index]
-                msp_entry = self.format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt)
-                file.write(msp_entry)
+    def save_to_msp(self, df, file, irt_values, aa_masses, mod_masses, masses):
+        for index, row in df.iterrows():
+            irt = irt_values[index]
+            msp_entry = self.format_msp(row['peptide_sequence'], row['charge'], row['collision_energy'], row['mz_values'], row['intensities'], irt, aa_masses, mod_masses, masses)
+            file.write(msp_entry)
 
-    def process(self, output_file='output.msp'):
-        df = self.get_prosit_predictions(self.peptides)
-        if df is not None:
-            irt_values = [0.0] * len(df)  # Replace with actual iRT values if available
-            self.save_to_msp(df, output_file, irt_values)
-        else:
-            print("No data to save.")
+    def process_peptides_with_charge(self, peptides, aa_masses, mod_masses, masses):
+        batch_size = 100
+        with open(f"{self.output_path}/{self.output_name}", 'w') as file:
+            for start in range(0, len(peptides), batch_size):
+                batch_peptides = peptides[start:start + batch_size]
+                irt_values = self.get_irt_predictions(batch_peptides)
+                df = self.get_prosit_predictions(batch_peptides)
+
+                if df is not None and irt_values is not None:
+                    self.save_to_msp(df, file, irt_values, aa_masses, mod_masses, masses)
+
