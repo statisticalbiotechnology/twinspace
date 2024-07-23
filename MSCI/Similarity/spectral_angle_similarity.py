@@ -84,21 +84,7 @@ class joinPeaks:
 
 
 def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n=0.5):
-    """
-    Processes pairs of spectra, matches their peaks, and calculates the angle between them.
 
-    Parameters:
-    chunk (list): List of index pairs (tuples) to be processed.
-    spectra (list): List of spectra objects.
-    mz_irt_df (pd.DataFrame): DataFrame containing MW, iRT, and peptide names.
-    tolerance (int): Tolerance for peak matching.
-    ppm (int): Parts per million for peak matching.
-    m (float): Parameter for angle calculation.
-    n (float): Parameter for angle calculation.
-
-    Returns:
-    pd.DataFrame: DataFrame containing indices of the spectra, calculated angle, and similarity score.
-    """
     results = []
 
     for index_pair in chunk:
@@ -119,12 +105,12 @@ def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n
         results.append({
             'index1': i,
             'index2': j,
-            'column1_peptide': mz_irt_df.loc[i, 'Name'],
-            'column2_peptide': mz_irt_df.loc[j, 'Name'],
-            'MW1': mz_irt_df.loc[i, 'MW'],
-            'MW2': mz_irt_df.loc[j, 'MW'],
-            'iRT1': mz_irt_df.loc[i, 'iRT'],
-            'iRT2': mz_irt_df.loc[j, 'iRT'],
+            'peptide 1': mz_irt_df.loc[i, 'Name'],
+            'peptide 2': mz_irt_df.loc[j, 'Name'],
+            'm/z  1': mz_irt_df.loc[i, 'MW'],
+            'm/z 2': mz_irt_df.loc[j, 'MW'],
+            'iRT 1': mz_irt_df.loc[i, 'iRT'],
+            'iRT 2': mz_irt_df.loc[j, 'iRT'],
             'similarity_score': angle,  
         })
 
