@@ -22,7 +22,6 @@ class PeptideProcessor:
         with open(file_path, "r") as file:
             lines = file.readlines()
         lines = [line.strip() for line in lines if line.strip()]
-        print(f"Peptides read from file: {lines}")
         return lines
 
     def calculate_peptide_mass(self, peptide_sequence):
@@ -111,8 +110,6 @@ class PeptideProcessor:
         print("Starting peptide processing...")
         df = self.get_prosit_predictions(self.peptides)
         if df is not None:
-            print("Predictions DataFrame:")
-            print(df.head())
             self.save_to_msp(df, output_file)
         else:
             print("No data to save.")
