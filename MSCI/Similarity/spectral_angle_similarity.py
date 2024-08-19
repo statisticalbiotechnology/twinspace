@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd 
-
+import numpy as np 
+from matchms.similarity import CosineGreedy
 
 def ndotproduct(x, y, m=0, n=0.5, na_rm=True):
     wx = _weightxy(x.iloc[:,0], x.iloc[:,1], m, n)
@@ -83,7 +84,7 @@ class joinPeaks:
         return x_matched_df, y_matched_df
 
 
-def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n=0.5):
+def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=0, m=0, n=0.5):
 
     results = []
 
@@ -100,7 +101,33 @@ def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=10, m=0, n
         x_matched, y_matched = matcher.match(x_df, y_df)
 
         angle = nspectraangle(x_matched, y_matched, m=m, n=n)
+        print(angle)
         
+        # Extract the relevant information for the given index pair
+        results.append({
+            'index1': i,
+            'index2': j,
+            'peptide 1': mz_irt_df.loc[i, 'Name'],
+            'peptide 2': mz_irt_df.loc[j, 'Name'],
+            'm/z  1': mz_irt_df.loc[i, 'MW'],
+            'm/z 2': mz_irt_df.loc[j, 'MW'],
+            'iRT 1': mz_irt_df.loc[i, 'iRT'],
+            'iRT 2': mz_irt_df.loc[j, 'iRT'],
+            'similarity_score': angle,  
+        })
+
+    return pd.DataFrame(results)
+
+def process_spectra_pairs_cosine(chunk, spectra, mz_irt_df, tolerance=0):
+
+    results = []
+
+    for index_pair in chunk:
+        i, j = index_pair
+
+        cosine_greedy = CosineGreedy(tolerance = tolerance)
+        score = cosine_greedy.pair(spectra[i], spectra[j])    
+        angle = score['score']
         # Extract the relevant information for the given index pair
         results.append({
             'index1': i,

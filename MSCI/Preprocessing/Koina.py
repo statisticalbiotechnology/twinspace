@@ -135,14 +135,21 @@ import re
 import re
 import requests
 import pandas as pd
+import requests
+import re
+import pandas as pd
+
 
 class PeptideProcessor:
-    def __init__(self, input_file, collision_energy, charge, model_intensity, model_irt):
+    def __init__(self, input_file, collision_energy, charge, model_intensity, model_irt, instrument_type="QE"):
         self.input_file = input_file
         self.collision_energy = collision_energy
         self.charge = charge
+        self.instrument_type = instrument_type
+        self.model_intensity = model_intensity
+        self.model_irt = model_irt
         self.model_intensity_url = f"https://koina.wilhelmlab.org/v2/models/{model_intensity}/infer"
-        self.model_irt_url = f"https://koina.wilhelmlab.org/v2/models/{model_irt}/infer" 
+        self.model_irt_url = f"https://koina.wilhelmlab.org/v2/models/{model_irt}/infer"
 
     def calculate_peptide_mass(self, peptide_sequence):
         total_mass = MASSES["N_TERMINUS"]
@@ -164,38 +171,64 @@ class PeptideProcessor:
         total_mass += MASSES["C_TERMINUS"]
         return total_mass
 
-    def get_prosit_predictions(self, peptides):
-        request_body = {
-            "id": "batch_request",
-            "inputs": [
-                {
-                    "name": "peptide_sequences",
-                    "shape": [len(peptides), 1],
-                    "datatype": "BYTES",
-                    "data": list(peptides)
-                },
-                {
-                    "name": "collision_energies",
-                    "shape": [len(peptides), 1],
-                    "datatype": "FP32",
-                    "data": [self.collision_energy] * len(peptides)
-                },
-                {
-                    "name": "precursor_charges",
-                    "shape": [len(peptides), 1],
-                    "datatype": "INT32",
-                    "data": [self.charge] * len(peptides)
-                }
-            ]
-        }
+    def get_request_body(self, peptides, model_type):
+        if model_type.startswith("Prosit"):
+            return {
+                "id": "batch_request",
+                "inputs": [
+                    {
+                        "name": "peptide_sequences",
+                        "shape": [len(peptides), 1],
+                        "datatype": "BYTES",
+                        "data": list(peptides)
+                    },
+                    {
+                        "name": "collision_energies",
+                        "shape": [len(peptides), 1],
+                        "datatype": "FP32",
+                        "data": [self.collision_energy] * len(peptides)
+                    },
+                    {
+                        "name": "precursor_charges",
+                        "shape": [len(peptides), 1],
+                        "datatype": "INT32",
+                        "data": [self.charge] * len(peptides)
+                    }
+                ]
+            }
+        elif model_type.startswith("ms2pip"):
+            return {
+                "id": "0",
+                "inputs": [
+                    {
+                        "name": "peptide_sequences",
+                        "shape": [len(peptides), 1],
+                        "datatype": "BYTES",
+                        "data": list(peptides)
+                    },
+                    {
+                        "name": "precursor_charges",
+                        "shape": [len(peptides), 1],
+                        "datatype": "INT32",
+                        "data": [self.charge] * len(peptides)
+                    }
+                ]
+            }
+        else:
+            raise ValueError("Unsupported model type")
+
+    def get_predictions(self, peptides):
+        model_type = self.model_intensity.split("_")[0]  # Determine model type from the name
+        request_body = self.get_request_body(peptides, self.model_intensity)
 
         response = requests.post(self.model_intensity_url, json=request_body)
 
         if response.status_code == 200:
             predictions = response.json()
             try:
-                intensities = predictions['outputs'][2]['data']
-                mz_values = predictions['outputs'][1]['data']
+                # Ensuring that intensities and mz_values are float
+                intensities = [float(i) for i in predictions['outputs'][2]['data']]
+                mz_values = [float(mz) for mz in predictions['outputs'][1]['data']]
             except KeyError:
                 return None
             
@@ -248,13 +281,19 @@ class PeptideProcessor:
     def format_msp(self, peptide, charge, collision_energy, mz_values, intensities, irt):
         mw = self.calculate_peptide_mass(peptide)
         mz = (mw + (charge * 1.007276)) / charge
+
+        # Convert to float to ensure no format issues
+        mz = float(mz)
+        collision_energy = float(collision_energy)
+        irt = float(irt)
+
         header = f"Name: {peptide}/{charge}\n"
         pepmass = f"MW: {mz:.6f}\n"
-        collision_energy_line = f"Collision_energy: {collision_energy}\n"
+        collision_energy_line = f"Collision_energy: {collision_energy:.2f}\n"
         irt_line = f"iRT: {irt:.6f}\n"
 
         sorted_peaks = sorted(
-            (mz, intensity) for mz, intensity in zip(mz_values, intensities) if mz != -1.00 and intensity != -1.000000
+            (float(mz), float(intensity)) for mz, intensity in zip(mz_values, intensities) if mz != -1.00 and intensity != -1.000000
         )
 
         num_peaks = len(sorted_peaks)
@@ -274,16 +313,12 @@ class PeptideProcessor:
 
     def process(self, output_filename):
         peptides = pd.read_csv(self.input_file, header=None)[0].tolist()
-        batch_size = 100
+        batch_size = 1000
         with open(output_filename, 'w') as file:
             for start in range(0, len(peptides), batch_size):
                 batch_peptides = peptides[start:start + batch_size]
                 irt_values = self.get_irt_predictions(batch_peptides)
-                df = self.get_prosit_predictions(batch_peptides)
+                df = self.get_predictions(batch_peptides)
 
                 if df is not None and irt_values is not None:
                     self.save_to_msp(df, file, irt_values)
-
-
-
-

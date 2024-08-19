@@ -76,4 +76,5 @@ def process_peptide_combinations(mz_irt_df, tolerance1, tolerance2, use_ppm=True
         })
 
     results_df = pd.DataFrame(results)
+    print("Results DataFrame Columns:", results_df.columns)  # Debugging line
     return results_df
