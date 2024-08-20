@@ -4,15 +4,11 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
-    readme = readme_file.read()
-
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
+# Define your package's dependencies
 requirements = ['Click>=7.0', ]
 
-test_requirements = ["matchms" ]
+# Define your test dependencies
+test_requirements = ["matchms", " scipy"]
 
 setup(
     author="Zahra ELHAMRAOUI",
@@ -28,14 +24,14 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    description="Peptide identification by mass spectrometry relies on the interpretation of fragmentation spectra based on the m/z pattern, relative intensities, and retention time (RT). Given a proteome, we wondered how many peptides generate very similar fragmentation spectra with current MS methods. MSCI is a python package built to assess the information content of peptide fragmentation spectra, we aimed calculating an information-content index for all peptides in a given proteome would enable us to design data acquisition and data analysis strategies that generate and prioritize the most informative fragment ions to be queried for peptide quantification.",
+    description="MSCI assesses peptide fragmentation spectra information content.",
     entry_points={
         'console_scripts': [
+            # Define any command-line scripts here, if applicable
         ],
     },
     install_requires=requirements,
     license="MIT license",
-    long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='MSCI',
     name='MSCI',

@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Zahra ELHAMRAOUI <zahraelhamraoui1997@gmail.com>
+* Zahra ELHAMRAOUI <zahra.elhamraoui@crg.eu>
 
 Contributors
 ------------
