@@ -1,0 +1,52 @@
+name: Publish MSCI Python Package
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers the workflow on version tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.6'  # Specify the minimum Python version your package supports
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine
+
+    - name: Install test dependencies
+      run: |
+        pip install Click>=7.0
+        pip install matchms
+
+    - name: Run tests
+      run: |
+        python -m unittest discover tests
+
+    - name: Build the package
+      run: |
+        python setup.py sdist bdist_wheel
+
+    - name: Publish to TestPyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      run: |
+        twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+    # Uncomment the following steps to publish to the real PyPI
+    # - name: Publish to PyPI
+    #   env:
+    #     TWINE_USERNAME: __token__
+    #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+    #   run: |
+    #     twine upload dist/*
