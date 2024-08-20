@@ -7,8 +7,13 @@ from MSCI.Preprocessing.read_msp_file import read_msp_file
 from MSCI.Grouping_MS1.Grouping_mw_irt import process_peptide_combinations
 from MSCI.Similarity.spectral_angle_similarity import process_spectra_pairs
 from matchms.importing import load_from_msp
-
-
+import pandas as pd
+# Ensure pandas has the version attribute
+if not hasattr(pd, 'version'):
+    class Version:
+        def __init__(self, version):
+            self.version = version
+    pd.version = Version(pd.__version__)
 @pytest.fixture
 def peptide_processor():
     """Fixture to create a PeptideProcessor instance."""
@@ -61,6 +66,5 @@ def test_process_spectra_pairs():
     mz_irt_df = read_msp_file('output.msp')
     index_array = Groups_df[['index1','index2']].values.astype(int)
     result = process_spectra_pairs(index_array, spectra, mz_irt_df, tolerance=0, ppm=10)
-
     assert result is not None, "The function should return a result"
     assert 'similarity_score' in result.columns, "The result should contain 'similarity_score' column"
