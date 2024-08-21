@@ -1,21 +1,15 @@
-# main.py
-
 import streamlit as st
 from pathlib import Path
-import sys
-sys.path.append('Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI')
-
 from MSCI.gui.utils import load_image, add_custom_css
 from MSCI.gui.landing_page import landing_page
-from MSCI.gui.peptide_analysis import peptide_twins_analysis, perform_analysis, plot_spectra
+from MSCI.gui.peptide_analysis import peptide_twins_analysis, plot_spectra
 from MSCI.gui.peptide_checker import peptide_twins_checker
 
 def main():
-    """Main function to run the Streamlit app."""
     st.set_page_config(layout="wide")
     add_custom_css()
 
-    logo_path = Path("Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/docs/MSCI_logor.png")
+    logo_path = Path("images/MSCI_logor.png")
     logo_image = load_image(str(logo_path))
 
     with st.sidebar:
@@ -38,4 +32,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
