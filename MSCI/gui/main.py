@@ -1,5 +1,6 @@
 import streamlit as st
 from pathlib import Path
+import MSCI
 from MSCI.gui.utils import load_image, add_custom_css
 from MSCI.gui.landing_page import landing_page
 from MSCI.gui.peptide_analysis import peptide_twins_analysis, plot_spectra
