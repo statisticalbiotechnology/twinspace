@@ -12,6 +12,7 @@ from matchms.filtering import reduce_to_number_of_peaks, select_by_relative_inte
 import os
 import matplotlib.pyplot as plt
 import sys
+# Append custom library paths
 from matchms import Spectrum
 from MSCI.Preprocessing.Koina import PeptideProcessor
 from MSCI.Grouping_MS1.Grouping_mw_irt import process_peptide_combinations
@@ -128,8 +129,6 @@ def perform_analysis(mz_tolerance: float, irt_tolerance: float, use_ppm: bool):
             st.error(f"An error occurred during analysis: {str(e)}")
 
 
-import tempfile
-
 def peptide_twins_analysis():
     """Render the Peptide Twins Analysis page."""
     st.session_state.setdefault('spectra_cache', None)
@@ -168,9 +167,7 @@ def peptide_twins_analysis():
 
         try:
             with st.spinner("Running prediction..."):
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".msp") as temp_output:
-                    output_msp_path = temp_output.name
-                    processor.process(output_msp_path)
+                processor.process('Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/output.msp')
                 st.success("Prediction Completed Successfully")
 
             st.subheader("Spectra Analysis")
@@ -189,32 +186,30 @@ def peptide_twins_analysis():
             if st.button("Start Analysis"):
                 st.session_state.similarity_method = similarity_method
 
-                spectra_file = output_msp_path
+                spectra_file = 'Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/output.msp'
                 
                 if filter_option == "Top N Peaks":
                     try:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".msp") as temp_filtered:
-                            filtered_file = temp_filtered.name
-                            filter_spectra_by_top_peaks(
-                                spectra_file,
-                                filtered_file,
-                                st.session_state.n_peaks
-                            )
-                            spectra_file = filtered_file
+                        filtered_file = 'Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/filtered_output.msp'
+                        filter_spectra_by_top_peaks(
+                            spectra_file,
+                            filtered_file,
+                            st.session_state.n_peaks
+                        )
+                        spectra_file = filtered_file
                     except Exception as e:
                         st.error(f"An error occurred while filtering spectra: {e}")
                         return
 
                 elif filter_option == "Intensity Threshold":
                     try:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".msp") as temp_filtered:
-                            filtered_file = temp_filtered.name
-                            filter_spectra_by_intensity(
-                                spectra_file,
-                                filtered_file,
-                                st.session_state.intensity_threshold
-                            )
-                            spectra_file = filtered_file
+                        filtered_file = 'Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/filtered_output.msp'
+                        filter_spectra_by_intensity(
+                            spectra_file,
+                            filtered_file,
+                            st.session_state.intensity_threshold
+                        )
+                        spectra_file = filtered_file
                     except Exception as e:
                         st.error(f"An error occurred while filtering spectra: {e}")
                         return
@@ -233,3 +228,35 @@ def peptide_twins_analysis():
             st.error(f"An error occurred during prediction: {e}")
     else:
         st.info("Please upload a peptide text file to proceed.")
+
+def plot_spectra():
+    # Show the DataFrame if it exists in the session state
+    if 'analysis_results' in st.session_state:
+        st.subheader("Spectra Similarity Results:")
+        st.dataframe(st.session_state.analysis_results)
+
+        # Add a download button
+        csv = st.session_state.analysis_results.to_csv(index=False).encode('utf-8')
+        st.download_button(label="Download results as CSV", data=csv, file_name='spectra_similarity_results.csv', mime='text/csv')
+    if st.session_state.spectra_cache is None or len(st.session_state.spectra_cache) == 0:
+        st.warning("Spectra data is not available. Please load the spectra data first.")
+        return
+
+    st.subheader("Plot Spectra")
+    st.write("Select two spectra indices to plot against each other:")
+
+    index1 = st.number_input("Enter first spectrum index:", min_value=0, max_value=len(st.session_state.spectra_cache) - 1, step=1, value=0)
+    index2 = st.number_input("Enter second spectrum index:", min_value=0, max_value=len(st.session_state.spectra_cache) - 1, step=1, value=1)
+
+    # Store the indices in session_state to persist across interactions
+    st.session_state.index1 = index1
+    st.session_state.index2 = index2
+
+    if st.button("Plot Spectra"):
+        if len(st.session_state.spectra_cache) > index1 and len(st.session_state.spectra_cache) > index2:
+            plt.figure(figsize=(10, 6))
+            st.session_state.spectra_cache[index1].plot_against(st.session_state.spectra_cache[index2])
+            st.pyplot(plt.gcf())
+            plt.clf()  # Clear the plot for the next use
+        else:
+            st.error("Invalid indices provided for plotting.")
