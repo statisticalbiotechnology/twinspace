@@ -1,4 +1,3 @@
-matchms  # Replace <specific_version> with the correct version or leave it out to get the latest version
-
+matchms
 --extra-index-url https://test.pypi.org/simple/
-MSCI  # Replace <specific_version> with the correct version or leave it out to get the latest version
+MSCI
