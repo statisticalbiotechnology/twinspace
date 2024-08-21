@@ -2,17 +2,12 @@ import streamlit as st
 from pathlib import Path
 import base64
 import requests
-from MSCI.gui.utils import load_image, add_custom_css
+from MSCI.gui.utils import load_image_from_url, add_custom_css
 from MSCI.gui.landing_page import landing_page
 from MSCI.gui.peptide_analysis import peptide_twins_analysis, plot_spectra
 from MSCI.gui.peptide_checker import peptide_twins_checker
 
-def load_image_from_url(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return base64.b64encode(response.content).decode('utf-8')
-    else:
-        return None
+
 
 def main():
     st.set_page_config(layout="wide")

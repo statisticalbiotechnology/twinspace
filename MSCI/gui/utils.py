@@ -3,12 +3,38 @@
 import base64
 import streamlit as st
 from pathlib import Path
+import requests
 
 def load_image(image_path: str) -> str:
     """Load and encode an image file to base64."""
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode('utf-8')
+    except FileNotFoundError:
+        st.error(f"Image not found: {image_path}")
+        return ""
+    
+def load_image_from_url(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return base64.b64encode(response.content).decode('utf-8')
+    else:
+        return None
+    
+
+def load_image(image_path: str) -> str:
+    """Load and encode an image file to base64."""
+    try:
+        if image_path.startswith("http://") or image_path.startswith("https://"):
+            response = requests.get(image_path)
+            if response.status_code == 200:
+                return base64.b64encode(response.content).decode('utf-8')
+            else:
+                st.error(f"Unable to load image from URL: {image_path}")
+                return ""
+        else:
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode('utf-8')
     except FileNotFoundError:
         st.error(f"Image not found: {image_path}")
         return ""
