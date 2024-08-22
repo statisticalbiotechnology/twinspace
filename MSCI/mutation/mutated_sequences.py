@@ -5,10 +5,11 @@ import pandas as pd
 
 
 class ProteinMutator:
-    def __init__(self, proteome_file, mutations_file, output_dir):
+    def __init__(self, proteome_file, mutations_file, output_dir, digestion_method):
         self.proteome_file = proteome_file
         self.mutations_file = mutations_file
         self.output_dir = output_dir
+        self.digestion_method = digestion_method
         self.proteome = {}
         self.mutations_df = None
 
@@ -25,38 +26,13 @@ class ProteinMutator:
         """Load the mutations data from a TSV file."""
         self.mutations_df = pd.read_csv(self.mutations_file, sep="\t")
 
-    def tryptic_digest(self, sequence):
-        """Digest a protein sequence into peptides based on tryptic digestion rules."""
-        peptides = []
-        aa0 = '\0'
-        digest = ""
-
-        for aa1 in sequence:
-            if aa0 != '\0':
-                digest += aa0
-
-            if (aa1 != 'P' and aa0 == 'R') or aa0 == 'K':
-                if digest:
-                    peptides.append(digest)
-                digest = ""
-
-            aa0 = aa1
-
-        if aa0 != '\0':
-            digest += aa0
-
-        if digest:
-            peptides.append(digest)
-
-        return peptides
-
     def process_protein(self, target_protein_accession):
         """Process a single protein by generating peptides and mutating them based on mutations data."""
         print(f"\nProcessing protein accession: {target_protein_accession}")
 
         if target_protein_accession in self.proteome:
             protein_sequence = self.proteome[target_protein_accession]
-            peptides = self.tryptic_digest(protein_sequence)
+            peptides = self.digestion_method(protein_sequence)  # Use the provided digestion method
 
             # Save the original peptides to a file
             output_filename = f"{self.output_dir}{target_protein_accession}_peptides.txt"
@@ -164,10 +140,34 @@ class ProteinMutator:
             self.process_protein(target_protein_accession)
 
 
-# Example of using the ProteinMutator class
+def tryptic_digest(sequence):
+    peptides = []
+    aa0 = '\0'
+    digest = ""
+
+    for aa1 in sequence:
+        if aa0 != '\0':
+            digest += aa0
+
+        if (aa1 != 'P' and aa0 == 'R') or aa0 == 'K':
+            if digest:
+                peptides.append(digest)
+            digest = ""
+
+        aa0 = aa1
+
+    if aa0 != '\0':
+        digest += aa0
+
+    if digest:
+        peptides.append(digest)
+
+    return peptides
+
+
 proteome_file = "Z:/zelhamraoui/MSCA_Package/mutation/uniprotkb_Human_AND_reviewed_true_AND_m_2023_09_12.fasta"
 mutations_file = "Z:/zelhamraoui/MSCA_Package/mutation/uniprotkb_Human_AND_reviewed_true_AND_m_2023_09_12.tsv"
 output_dir = "Z:/zelhamraoui/MSCA_Package/mutation/Dataset/one_point_mutation/"
 
-mutator = ProteinMutator(proteome_file, mutations_file, output_dir)
+mutator = ProteinMutator(proteome_file, mutations_file, output_dir, tryptic_digest)
 mutator.process_all_proteins()
