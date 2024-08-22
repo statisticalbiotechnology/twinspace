@@ -68,3 +68,17 @@ def parse_fasta_and_digest(fasta_file, digest_type="trypsin"):
         results[record.id] = peptides
 
     return results
+import csv
+
+def peptides_to_csv(result, output_file):
+    # Open the output CSV file
+    with open(output_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write the header
+        writer.writerow(["Peptide"])
+        
+        # Write the peptides
+        for peptides in result.values():
+            for peptide in peptides:
+                writer.writerow([peptide])
