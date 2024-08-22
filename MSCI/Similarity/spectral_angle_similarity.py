@@ -101,7 +101,6 @@ def process_spectra_pairs(chunk, spectra, mz_irt_df, tolerance=0, ppm=0, m=0, n=
         x_matched, y_matched = matcher.match(x_df, y_df)
 
         angle = nspectraangle(x_matched, y_matched, m=m, n=n)
-        print(angle)
         
         # Extract the relevant information for the given index pair
         results.append({
