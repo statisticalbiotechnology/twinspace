@@ -1,33 +1,27 @@
+<p align="center">
+   <img src="docs/MSCI_logo.png" alt="logo" width="300" height="300">
+</p>
 
-   <p align="center">
-      <img src="docs/MSCI_logo.png" alt="logo" width="300" height="300">
-   </p>
+# MSCI: Mass Spectrometry Information Content
 
+**Official Documentation**: [Available here](https://msci.readthedocs.io).
 
-* Official Documentation available at: https://msci.readthedocs.io.
+We developed the MSCI Python library to tackle the challenges of peptide identification in mass spectrometry-based proteomics, particularly regarding indistinguishable peptides. MSCI provides a comprehensive toolset that streamlines the workflow from data import to spectral analysis, enabling researchers to effectively evaluate fragmentation similarity scores among peptide sequences and pinpoint indistinguishable peptide pairs in a given proteome.
 
+<p align="center">
+   <img src="docs/INTRODUCTION.png" alt="workflow illustration">
+</p>
 
-Peptide identification by mass spectrometry relies on the interpretation of fragmentation spectra based on the m/z pattern, relative intensities, and retention time (RT). Given a proteome, we wondered how many peptides generate very similar fragmentation spectra with current MS methods. MSCI is a Python package built to assess the information content of peptide fragmentation spectra, we aimed calculating an information-content index for all peptides in a given proteome would enable us to design data acquisition and data analysis strategies that generate and prioritize the most informative fragment ions to be queried for peptide quantification.
+## Installation
 
-  <p >
-      <img src="docs/INTRODUCTION.png" alt="workflow illustration">
-   </p>
+### Prerequisites
 
-Installation:
-==================
-prerequisites:
-
-- Python 3.8 -3.11
+- Python 3.8 - 3.11
 - Matchms
 
-Implementation and example :
-==================
+### Install MSCI
 
-**Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk?usp=sharing) 
+You can install MSCI via pip:
 
-
-
-Contribution
-==================
-
-If you would like to contribute to this project, feel free to fork the repository on GitHub and submit a pull request.
+```bash
+pip install MSCI==0.2.0
