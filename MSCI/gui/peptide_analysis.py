@@ -129,6 +129,12 @@ def perform_analysis(mz_tolerance: float, irt_tolerance: float, use_ppm: bool):
             st.error(f"An error occurred during analysis: {str(e)}")
 
 
+import tempfile
+
+import requests
+
+import requests
+
 def peptide_twins_analysis():
     """Render the Peptide Twins Analysis page."""
     st.session_state.setdefault('spectra_cache', None)
@@ -137,7 +143,32 @@ def peptide_twins_analysis():
 
     st.header("Peptide Twins Analysis")
 
-    uploaded_file = st.file_uploader("Upload your peptide file", type=["txt"])
+    # File uploader with an option to load example data
+    uploaded_file = st.file_uploader("Upload your peptide file or use the example dataset", type=["txt"])
+    use_example = st.checkbox("Use our example Dataset", value=False)
+
+    # Load example dataset if checkbox is checked
+    if use_example and not uploaded_file:
+        example_url = "https://raw.githubusercontent.com/zahrael97/MSCI/master/random_tryptic_peptides.txt"
+        response = requests.get(example_url)
+        if response.status_code == 200:
+            st.success("Loaded example dataset successfully!")
+            st.session_state.peptide_data = response.text
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode='w') as temp_file:
+                temp_file.write(st.session_state.peptide_data)
+                st.session_state.temp_file_path = temp_file.name
+        else:
+            st.error("Failed to load the example dataset. Please try again.")
+            return
+    elif uploaded_file:
+        st.session_state.peptide_data = uploaded_file.read().decode("utf-8")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode='w') as temp_file:
+            temp_file.write(st.session_state.peptide_data)
+            st.session_state.temp_file_path = temp_file.name
+
+    # Show the rest of the interface even if no file is uploaded
+    st.subheader("Prediction Settings")
+
     model_intensity = st.selectbox("Select Intensity Model", INTENSITY_MODELS)
     model_irt = st.selectbox("Select iRT Model", IRT_MODELS)
     collision_energy = st.number_input("Set Collision Energy", min_value=1, step=1, value=30)
@@ -147,16 +178,7 @@ def peptide_twins_analysis():
     n_peaks = st.number_input("Number of Peaks to Keep", min_value=1, step=1, value=6, key="n_peaks")
     intensity_threshold = st.number_input("Intensity Threshold", min_value=0.0, max_value=1.0, step=0.01, value=0.1, key="intensity_threshold")
 
-    if uploaded_file:
-        st.session_state.peptide_data = uploaded_file.read().decode("utf-8")
-
-        if not st.session_state.temp_file_path:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode='w') as temp_file:
-                temp_file.write(st.session_state.peptide_data)
-                st.session_state.temp_file_path = temp_file.name
-
-        st.subheader("Prediction Results")
-
+    if st.session_state.temp_file_path:
         processor = PeptideProcessor(
             input_file=st.session_state.temp_file_path,
             collision_energy=collision_energy,
@@ -167,7 +189,9 @@ def peptide_twins_analysis():
 
         try:
             with st.spinner("Running prediction..."):
-                processor.process('Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/output.msp')
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".msp") as temp_output:
+                    output_msp_path = temp_output.name
+                    processor.process(output_msp_path)
                 st.success("Prediction Completed Successfully")
 
             st.subheader("Spectra Analysis")
@@ -186,30 +210,32 @@ def peptide_twins_analysis():
             if st.button("Start Analysis"):
                 st.session_state.similarity_method = similarity_method
 
-                spectra_file = 'Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/output.msp'
+                spectra_file = output_msp_path
                 
                 if filter_option == "Top N Peaks":
                     try:
-                        filtered_file = 'Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/filtered_output.msp'
-                        filter_spectra_by_top_peaks(
-                            spectra_file,
-                            filtered_file,
-                            st.session_state.n_peaks
-                        )
-                        spectra_file = filtered_file
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".msp") as temp_filtered:
+                            filtered_file = temp_filtered.name
+                            filter_spectra_by_top_peaks(
+                                spectra_file,
+                                filtered_file,
+                                st.session_state.n_peaks
+                            )
+                            spectra_file = filtered_file
                     except Exception as e:
                         st.error(f"An error occurred while filtering spectra: {e}")
                         return
 
                 elif filter_option == "Intensity Threshold":
                     try:
-                        filtered_file = 'Z:/zelhamraoui/MSCA_Package/MSCI_package/MSCI/filtered_output.msp'
-                        filter_spectra_by_intensity(
-                            spectra_file,
-                            filtered_file,
-                            st.session_state.intensity_threshold
-                        )
-                        spectra_file = filtered_file
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".msp") as temp_filtered:
+                            filtered_file = temp_filtered.name
+                            filter_spectra_by_intensity(
+                                spectra_file,
+                                filtered_file,
+                                st.session_state.intensity_threshold
+                            )
+                            spectra_file = filtered_file
                     except Exception as e:
                         st.error(f"An error occurred while filtering spectra: {e}")
                         return
@@ -227,7 +253,7 @@ def peptide_twins_analysis():
         except Exception as e:
             st.error(f"An error occurred during prediction: {e}")
     else:
-        st.info("Please upload a peptide text file to proceed.")
+        st.info("Please upload a peptide text file or use the example dataset to proceed.")
 
 def plot_spectra():
     # Show the DataFrame if it exists in the session state

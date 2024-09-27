@@ -7,20 +7,24 @@ from Bio import SeqIO
 import io
 
 DATASETS = {
-    "Human": {
-        25: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE25.csv",
-        28: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE28.csv",
-        30: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE30.csv",
-        32: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE32.csv",
-        35: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE35.csv"
+    "Reference Human Canonical proteome": {
+        25: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE25.csv",
+        28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE28.csv",
+        30: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE30.csv",
+        32: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE32.csv",
+        35: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE35.csv"
     },
     "Immunopeptidome": {
-        28: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE28.csv",
+        28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/HLA_peptides_HRHR_NSA_score.csv",
     },
     "Mutated human proteome": {
-        28: "Z:/zelhamraoui/MSCA_Package/results/Tryptic/01_08_2024/NSA_HRHR_NCE28.csv",
+        28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/mutation_peptides_HRHR_NSA_score.csv",
+    },
+    "Human Oral microbiome": {
+        28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/Oral_microbiom.csv",
     }
 }
+
 
 def parse_fasta(fasta_file) -> Dict[str, str]:
     """Parse a FASTA file and return a dictionary of protein sequences."""
@@ -52,8 +56,7 @@ def find_colliding_peptides(df: pd.DataFrame, peptide: str, charge: int) -> set:
         return set()
 
     matches = df[((df['x_peptide'].apply(lambda x: extract_peptide_and_charge(x) == (peptide, charge))) |
-                  (df['y_peptide'].apply(lambda x: extract_peptide_and_charge(x) == (peptide, charge)))) &
-                 (df['angle'] > 0.7)]
+                  (df['y_peptide'].apply(lambda x: extract_peptide_and_charge(x) == (peptide, charge))))]
 
     colliding_peptides = {
         (row['x_peptide'].rsplit('/', 1)[0], int(row['x_peptide'].rsplit('/', 1)[1]))
@@ -69,7 +72,13 @@ def peptide_twins_checker():
     """Render the Peptide Twins Checker page."""
     st.header("Peptide Twins Checker")
 
-    organism = st.selectbox("Select Organism:", options=list(DATASETS.keys()), key='organism')
+    # Add a note about the datasets and analysis
+    st.markdown("""
+    **Note:** The datasets used in this tool and the detailed analysis can be found in our paper. 
+    Please refer to the paper for more information on the methodology and the data sources.
+    """)
+
+    organism = st.selectbox("Select Universe:", options=list(DATASETS.keys()), key='Universe')
     energies = st.multiselect("Select Collision Energies:", options=list(DATASETS[organism].keys()), key='energies')
 
     peptide = st.text_input("Enter Peptide:", key='peptide', value="SDPYGIIR")
@@ -87,7 +96,14 @@ def peptide_twins_checker():
             for energy in energies:
                 df_path = DATASETS[organism][energy]
                 with st.spinner(f"Loading data for NCE {energy}..."):
-                    df = pd.read_csv(df_path)
+                    try:
+                        df = pd.read_csv(df_path, delimiter=',')
+                    except pd.errors.ParserError as e:
+                        st.error(f"Failed to parse the CSV file for NCE {energy}. Error: {e}")
+                        continue
+                    except Exception as e:
+                        st.error(f"An error occurred while loading the CSV file: {e}")
+                        continue
 
                 if df.empty:
                     st.warning(f"No data found in the file for NCE {energy}. Skipping.")
@@ -113,4 +129,3 @@ def peptide_twins_checker():
                 st.success("No twin peptides detected in the selected energies.")
         else:
             st.warning("Please enter a peptide, charge, and upload a FASTA file to check.")
-

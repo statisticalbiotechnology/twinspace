@@ -1,5 +1,3 @@
-# landing_page.py
-
 import streamlit as st
 from pathlib import Path
 import sys
@@ -15,7 +13,7 @@ def landing_page():
     workflow_url = "https://github.com/proteomicsunitcrg/MSCI/raw/main/docs/INTRODUCTION.png"
 
     st.write("""
-    Peptide identification by mass spectrometry relies on the interpretation of fragmentation spectra based on the m/z pattern, relative intensities, and retention time (RT). Given a proteome, we wondered how many peptides generate very similar fragmentation spectra with current MS methods. MSCI is a Python package built to assess the information content of peptide fragmentation spectra. We aimed to calculate an information-content index for all peptides in a given proteome, which would enable us to design data acquisition and data analysis strategies that generate and prioritize the most informative fragment ions to be queried for peptide quantification.
+    The MSCI Python library was developed to address the challenges of peptide identification in mass spectrometry-based proteomics, particularly regarding the issue of indistinguishable peptides that exhibit similar analytical values and fragmentation patterns. MSCI provides a comprehensive toolset to streamline the workflow from data import to spectral analysis, enabling researchers to effectively evaluate fragmentation similarity scores, identify indistinguishable peptide pairs, and design data acquisition and analysis strategies that prioritize the most informative fragment ions for accurate peptide quantification.
     """)
 
     # Load image from URL
@@ -38,7 +36,6 @@ def landing_page():
     - Matchms
     """)
 
-
     st.subheader("Implementation and Example")
     st.write("""
     **Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk?usp=sharing)
@@ -48,3 +45,14 @@ def landing_page():
     st.write("""
     If you would like to contribute to this project, feel free to fork the repository on GitHub and submit a pull request.
     """)
+
+    st.subheader("Please Cite")
+    st.write("""
+    If you use the MSCI package for your research, please cite the following works:
+    
+
+    Huber, F., Ridder, L., Verhoeven, S., Spaaks, J. H., Dijkstra, M., & Reijnders, M. J. (2021). matchms - processing and comparison of mass spectrometric data. Analytical Chemistry, 93(23), 8301-8308. https://doi.org/10.1021/acs.analchem.1c00685
+    """)
+
+if __name__ == "__main__":
+    landing_page()
