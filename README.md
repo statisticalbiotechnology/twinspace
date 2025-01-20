@@ -19,7 +19,7 @@ We developed the MSCI Python library to tackle the challenges of peptide identif
 - Python 3.8 - 3.11
 - Matchms
 - biopython
-
+installing the package automatically install the dependencies
 ### Install MSCI
 
 You can install MSCI via pip:
