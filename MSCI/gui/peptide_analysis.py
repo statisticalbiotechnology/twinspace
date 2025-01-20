@@ -196,8 +196,8 @@ def peptide_twins_analysis():
 
             st.subheader("Spectra Analysis")
 
-            mz_tolerance = st.number_input("Set Mass Tolerance", min_value=0.0, step=0.1, value=0.1)
-            irt_tolerance = st.number_input("Set iRT Tolerance", min_value=0.0, step=0.1, value=0.1)
+            mz_tolerance = st.number_input("Set Mass Tolerance", min_value=0.0, step=0.1, value=10)
+            irt_tolerance = st.number_input("Set iRT Tolerance", min_value=0.0, step=0.1, value=10)
             use_ppm = st.checkbox("Use PPM for mass tolerance", value=False)
 
             similarity_method = st.selectbox(
