@@ -12,6 +12,7 @@ from matchms.filtering import reduce_to_number_of_peaks, select_by_relative_inte
 import os
 import matplotlib.pyplot as plt
 import sys
+import time
 # Append custom library paths
 from matchms import Spectrum
 from MSCI.Preprocessing.Koina import PeptideProcessor
@@ -87,7 +88,6 @@ def filter_spectra_by_top_peaks(input_file_path: str, output_file_path: str, n_p
         return None
 
 def perform_analysis(mz_tolerance: float, irt_tolerance: float, use_ppm: bool):
-    """Perform the peptide twins analysis with detailed debugging."""
     if not st.session_state.spectra_cache or st.session_state.mz_irt_df_cache.empty:
         st.error("Spectra data is missing or invalid. Please ensure the MSP file is correctly loaded.")
         return
@@ -97,17 +97,14 @@ def perform_analysis(mz_tolerance: float, irt_tolerance: float, use_ppm: bool):
             Groups_df = process_peptide_combinations(
                 st.session_state.mz_irt_df_cache, mz_tolerance, irt_tolerance, use_ppm=use_ppm
             )
-
+            
             st.write(f"Grouped data shape: {Groups_df.shape}")
-#            st.write(Groups_df.head())  # Log the first few rows for debugging
-
+            
             if not {'index1', 'index2'}.issubset(Groups_df.columns):
-                st.error("Unexpected DataFrame structure. 'index1' and 'index2' columns not found.")
+                st.error("No indistinguishable pairs")
                 return
 
             index_array = Groups_df[['index1', 'index2']].values.astype(int)
-#            st.write(f"Number of combinations: {len(index_array)}")
-
             similarity_progress = st.progress(0)
             total_combinations = len(index_array)
             results = []
@@ -117,17 +114,14 @@ def perform_analysis(mz_tolerance: float, irt_tolerance: float, use_ppm: bool):
                     result = process_spectra_pairs(
                         [(idx1, idx2)], st.session_state.spectra_cache, st.session_state.mz_irt_df_cache, tolerance=mz_tolerance, ppm=use_ppm
                     )
-
                     results.append(result)
                     similarity_progress.progress((i + 1) / total_combinations)
 
                 st.session_state.analysis_results = pd.concat(results, ignore_index=True)
-#                st.subheader("Spectra Similarity Results:")
-#                st.dataframe(st.session_state.analysis_results)
+                st.success("Spectra similarity analysis completed!")
 
         except Exception as e:
             st.error(f"An error occurred during analysis: {str(e)}")
-
 
 import tempfile
 
@@ -142,6 +136,23 @@ def peptide_twins_analysis():
     st.session_state.setdefault('temp_file_path', None)
 
     st.header("Peptide Twins Analysis")
+    # Input Description    
+    st.markdown("""
+    ## Peptide Twins Analysis Tool
+    A user can, using MSCI, drop a complete list of peptides to predict spectra from Koina. 
+    User is able to adjust parameters such as collision energy, charge, and model used in predicting fragmentation intensity and indexed retention time. 
+    For example, if a user works on Phosphoproteomics, they could utilize available prediction models (MS2 deep is available so far) and tailor it to their needs. 
+    The user is also able to select from similarity scores; so far, we implemented the normalized spectral angle, along with greedy cosine. 
+    This will output a data frame of colliding peptide pairs along with their m/z, iRT, and similarity score measures.
+    # Input File Format Description
+    ### Input File Format
+    - The input file should be a plain text (.txt) file containing a list of peptide sequences, 
+    one per line, with no headers or additional formatting.
+    - Each sequence consists of **standard amino acids** (A, C, D, E, F, G, H, I, K, L, M, N, P, Q, R, S, T, V, W, Y).
+    - Peptide length should be adequate to the prediction model for example for PROSIT **7 to 30 amino acids**.
+
+    Please ensure your file follows this format for accurate analysis.
+    """)
 
     # File uploader with an option to load example data
     uploaded_file = st.file_uploader("Upload your peptide file or use the example dataset", type=["txt"])
@@ -154,6 +165,13 @@ def peptide_twins_analysis():
         if response.status_code == 200:
             st.success("Loaded example dataset successfully!")
             st.session_state.peptide_data = response.text
+            
+            # Show the first 3 lines of the dataset
+            example_lines = response.text.splitlines()[:3]
+            st.write("### First 3 lines of the Example Dataset:")
+            st.text("\n".join(example_lines))  # Display the first 3 lines
+
+            # Save the example data to a temporary file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode='w') as temp_file:
                 temp_file.write(st.session_state.peptide_data)
                 st.session_state.temp_file_path = temp_file.name
@@ -196,8 +214,8 @@ def peptide_twins_analysis():
 
             st.subheader("Spectra Analysis")
 
-            mz_tolerance = st.number_input("Set Mass Tolerance", min_value=0.0, step=0.1, value=10)
-            irt_tolerance = st.number_input("Set iRT Tolerance", min_value=0.0, step=0.1, value=10)
+            mz_tolerance = st.number_input("Set Mass Tolerance", min_value=0.0, step=0.1, value=10.0)
+            irt_tolerance = st.number_input("Set iRT Tolerance", min_value=0.0, step=0.1, value=10.0)
             use_ppm = st.checkbox("Use PPM for mass tolerance", value=False)
 
             similarity_method = st.selectbox(
@@ -259,11 +277,29 @@ def plot_spectra():
     # Show the DataFrame if it exists in the session state
     if 'analysis_results' in st.session_state:
         st.subheader("Spectra Similarity Results:")
+        st.markdown("""
+        ### Explanation of Spectra Similarity Results:
+
+        The table below contains the results of the peptide twins analysis. Each row represents a pair of spectra and their similarity score based on the chosen similarity method (e.g., Spectral Angle or Greedy Cosine Similarity).
+
+        #### Columns in the Spectra Similarity Results:
+
+        - **index1**: The index of the first spectrum compared.
+        - **index2**: The index of the second spectrum compared.
+        - **similarity_score**: The similarity score between the two spectra. A higher value indicates a greater similarity between the spectra.
+        - **mz_difference**: The difference in m/z (mass-to-charge ratio) values between the two spectra.
+        - **intensity_difference**: The difference in intensity values between the two spectra.
+        
+        You can also download the results as a CSV file for further analysis or reporting.
+        """)
         st.dataframe(st.session_state.analysis_results)
 
         # Add a download button
         csv = st.session_state.analysis_results.to_csv(index=False).encode('utf-8')
         st.download_button(label="Download results as CSV", data=csv, file_name='spectra_similarity_results.csv', mime='text/csv')
+
+
+    
     if st.session_state.spectra_cache is None or len(st.session_state.spectra_cache) == 0:
         st.warning("Spectra data is not available. Please load the spectra data first.")
         return

@@ -1,51 +1,54 @@
-.. highlight:: shell
+Installation Guide
+==================
 
-============
-Installation
-============
+This guide will help you install the MSCI package and its dependencies.
 
+Clone the Repository
+--------------------
+If you prefer to work with the latest code directly from the repository, you can clone it using the following command:
 
-Stable release
---------------
+.. code-block:: bash
 
-To install MSCI, run this command in your terminal:
+    git clone https://github.com/proteomicsunitcrg/MSCI.git
 
-.. code-block:: console
+Installing MSCI via pip
+-----------------------
+You can install MSCI directly using pip, which will also handle the necessary dependencies.
 
-    $ pip install msci
+.. code-block:: bash
 
-This is the preferred method to install MSCI, as it will always install the most recent stable release.
+    pip install MSCI==0.2.0
 
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
+If you're working in a Jupyter notebook or a Colab environment, you may need to adjust the Python path to include the MSCI module:
 
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
+.. code-block:: python
 
-
-From sources
-------------
-
-The sources for MSCI can be downloaded from the `Github repo`_.
-
-You can either clone the public repository:
-
-.. code-block:: console
-
-    $ git clone git://github.com/zahrael97/msci
-
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl -OJL https://github.com/zahrael97/msci/tarball/master
-
-Once you have a copy of the source, you can install it with:
-
-.. code-block:: console
-
-    $ python setup.py install
+    import sys
+    sys.path.append('/path/to/MSCI')
 
 
-.. _Github repo: https://github.com/zahrael97/msci
-.. _tarball: https://github.com/zahrael97/msci/tarball/master
+**Note**: If you already have `matchms` installed and your environment prompts you to restart the session, select 'Cancel' to avoid any disruptions.
+
+Working with the Repository
+---------------------------
+After cloning the repository, navigate to the MSCI directory:
+
+.. code-block:: bash
+
+    cd MSCI
+
+This step ensures that you are in the correct directory before running any scripts or modules from the MSCI package.
+
+Installing in Google Colab
+--------------------------
+If you're using Google Colab, you can execute the following code to install the MSCI package and its dependencies:
+
+.. code-block:: python
+
+    pip install MSCI==0.2.0
+
+Remember to cancel any restart prompts from Colab to avoid disrupting your environment.
+
+Conclusion
+----------
+Once installed, you can start using the MSCI package to process mass spectrometry data, perform peptide grouping, and calculate similarity scores.

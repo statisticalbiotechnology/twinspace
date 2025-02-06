@@ -2,7 +2,8 @@ import requests
 import pandas as pd
 import re
 from itertools import combinations
-
+import streamlit as st
+import time
 # Existing masses and modifications
 PARTICLE_MASSES = {"PROTON": 1.007276467, "ELECTRON": 0.00054858}
 
@@ -314,11 +315,19 @@ class PeptideProcessor:
     def process(self, output_filename):
         peptides = pd.read_csv(self.input_file, header=None)[0].tolist()
         batch_size = 1000
+        total_batches = len(peptides) // batch_size + (1 if len(peptides) % batch_size != 0 else 0)
+        progress_bar = st.progress(0)
+
         with open(output_filename, 'w') as file:
-            for start in range(0, len(peptides), batch_size):
+            for i, start in enumerate(range(0, len(peptides), batch_size)):
                 batch_peptides = peptides[start:start + batch_size]
                 irt_values = self.get_irt_predictions(batch_peptides)
                 df = self.get_predictions(batch_peptides)
 
                 if df is not None and irt_values is not None:
                     self.save_to_msp(df, file, irt_values)
+                
+                progress_bar.progress((i + 1) / total_batches)  # Update progress
+                time.sleep(0.1)  # Simulate delay for user experience
+
+        st.success("Processing complete!")
