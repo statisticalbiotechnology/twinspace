@@ -17,7 +17,7 @@ Installation
 ==================
 You can install MSCI directly using pip, which will also handle the necessary dependencies.
 
-.. code-block:: bash
+.. 
 
     pip install MSCI==0.2.0
 
