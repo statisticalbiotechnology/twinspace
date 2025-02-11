@@ -21,7 +21,7 @@ pip install MSCI==0.2.0
 Implementation and example :
 ==================
 
-**Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk?usp=sharing) 
+**Open the Notebook**: Click on the following [link to Google Colab](https://drive.google.com/file/d/1hVUdX_SnS4nKrU-875jQheo8N6xE6t0_/view?usp=sharing) 
 
 
 
