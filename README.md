@@ -13,15 +13,19 @@ Peptide identification by mass spectrometry relies on the interpretation of frag
       <img src="docs/INTRODUCTION.png" alt="workflow illustration">
    </p>
 
-Installation:
+Installation
 ==================
-pip install MSCI==0.2.0
+You can install MSCI directly using pip, which will also handle the necessary dependencies.
+
+.. code-block:: bash
+
+    pip install MSCI==0.2.0
 
 
-Implementation and example :
+Implementation and example 
 ==================
 
-**Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1CEUfmlnKh7i9KgWC6xVkZRxu6zTfjNQL?usp=sharing) 
+**Open the Notebook**: Click on the following [Tutorial_google_colab](https://colab.research.google.com/drive/1CEUfmlnKh7i9KgWC6xVkZRxu6zTfjNQL?usp=sharing) 
 
 
 
