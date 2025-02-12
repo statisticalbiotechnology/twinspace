@@ -2,7 +2,6 @@
 import streamlit as st
 import tempfile
 import pandas as pd
-from MSCI.Preprocessing.Koina import PeptideProcessor
 from .utils import load_image
 from MSCI.Similarity.spectral_angle_similarity import process_spectra_pairs
 from MSCI.Preprocessing.read_msp_file import read_msp_file

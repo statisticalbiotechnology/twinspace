@@ -1,8 +1,8 @@
 import requests
+import streamlit as st 
 import pandas as pd
 import re
 from itertools import combinations
-import streamlit as st
 import time
 # Existing masses and modifications
 PARTICLE_MASSES = {"PROTON": 1.007276467, "ELECTRON": 0.00054858}

@@ -49,7 +49,6 @@ def read_mgf_file(filename):
                 'MW': mw,
                 'RT': rt
             })
-            print(f"Spectrum with {len(mz_values)} m/z values and {len(intensities)} intensities. MW: {mw}, RT: {rt}")
     return spectra
 
 def read_mzml_file(filename):
@@ -75,10 +74,3 @@ def read_ms_file(filename):
     else:
         raise ValueError(f"Unsupported file format: {file_extension}")
 
-# Example usage
-file_path = 'Z:/zelhamraoui/MSCA_Package/real_data/example.mgf'
-result = read_ms_file(file_path)
-if isinstance(result, pd.DataFrame):
-    display(result)
-else:
-    print(result)

@@ -1,24 +1,32 @@
-import pytest
 import sys
+from unittest import mock
+
+# Mock Streamlit to prevent import issues
+mock_st = mock.MagicMock()
+sys.modules["streamlit"] = mock_st
+
+# Now import the rest of the dependencies
+import pytest
 import os
-sys.path.append('/home/zahra/Downloads/MSCI')
+import pandas as pd
 from MSCI.Preprocessing.Koina import PeptideProcessor
 from MSCI.Preprocessing.read_msp_file import read_msp_file
 from MSCI.Grouping_MS1.Grouping_mw_irt import process_peptide_combinations
 from MSCI.Similarity.spectral_angle_similarity import process_spectra_pairs
 from matchms.importing import load_from_msp
-import pandas as pd
+
 # Ensure pandas has the version attribute
 if not hasattr(pd, 'version'):
     class Version:
         def __init__(self, version):
             self.version = version
     pd.version = Version(pd.__version__)
+
 @pytest.fixture
 def peptide_processor():
     """Fixture to create a PeptideProcessor instance."""
     processor = PeptideProcessor(
-        input_file="/home/zahra/Downloads/random_tryptic_peptides.txt",
+        input_file="Example_data/example.txt",
         collision_energy=30,
         charge=2,
         model_intensity="Prosit_2020_intensity_HCD",
@@ -36,10 +44,14 @@ def test_peptide_processor(peptide_processor):
     # Additional assertions to verify file content
     with open(output_file, 'r') as file:
         content = file.read()
-        assert 'BEGIN IONS' in content, "Output file should contain expected MSP format content"
+        
+        # Adjust the assertion to match the actual format
+        assert 'Name:' in content, "Output file should contain peptide names"
+        assert 'MW:' in content, "Output file should contain molecular weights"
+        assert 'Collision_energy:' in content, "Output file should contain collision energy"
+        assert 'iRT:' in content, "Output file should contain iRT values"
+        assert 'Num peaks:' in content, "Output file should contain peak counts"
 
-
-    # Additional assertions could be added here to check the content of 'result'
 
 def test_read_msp_file():
     """Test reading the .msp file."""
