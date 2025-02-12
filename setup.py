@@ -2,6 +2,9 @@
 
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 requirements = [
     'Click>=7.0',
     'streamlit',
@@ -21,6 +24,8 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     description="MSCI assesses peptide fragmentation spectra information content.",
+    long_description=long_description,  # ✅ Adding long description
+    long_description_content_type="text/markdown",  # ✅ Specifies markdown format
     install_requires=requirements,
     license="MIT license",
     include_package_data=True,
