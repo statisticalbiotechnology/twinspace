@@ -15,7 +15,6 @@ import sys
 import time
 # Append custom library paths
 from matchms import Spectrum
-from MSCI.Preprocessing.Koina import PeptideProcessor
 from MSCI.Grouping_MS1.Grouping_mw_irt import process_peptide_combinations
 from MSCI.Preprocessing.read_msp_file import read_msp_file
 from MSCI.Similarity.spectral_angle_similarity import process_spectra_pairs
