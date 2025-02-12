@@ -21,9 +21,9 @@ def main():
             </p>
             """, unsafe_allow_html=True)
         st.header("MSCI")
-        option = st.radio("Choose an option", ("MSCI", "Peptide Twins Analysis", "Peptide Twins Checker"))
+        option = st.radio("Choose an option", ("HOME", "Peptide Twins Analysis", "Peptide Twins Checker"))
 
-    if option == "MSCI":
+    if option == "HOME":
         landing_page()
     elif option == "Peptide Twins Analysis":
         peptide_twins_analysis()

@@ -1,10 +1,9 @@
-# peptide_checker.py
-
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Tuple
 from Bio import SeqIO
 import io
+import requests
 
 DATASETS = {
     "Reference Human Canonical proteome": {
@@ -14,23 +13,24 @@ DATASETS = {
         32: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE32.csv",
         35: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/NSA_HRHR_NCE35.csv"
     },
+    "Reference Human Canonical proteome with natural variants": {
+        28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/mutation_peptides_HRHR_NSA_score.csv",
+    },
+
     "Immunopeptidome": {
         28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/HLA_peptides_HRHR_NSA_score.csv",
-    },
-    "Mutated human proteome": {
-        28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/mutation_peptides_HRHR_NSA_score.csv",
     },
     "Human Oral microbiome": {
         28: "https://raw.githubusercontent.com/zahrael97/MSCI/master/Database/Oral_microbiom.csv",
     }
 }
 
+FASTA_URL = "https://raw.githubusercontent.com/proteomicsunitcrg/MSCI/refs/heads/main/tutorial/sp_human_2023_04.fasta"
 
-def parse_fasta(fasta_file) -> Dict[str, str]:
-    """Parse a FASTA file and return a dictionary of protein sequences."""
+def parse_fasta(fasta_content: str) -> Dict[str, str]:
+    """Parse a FASTA content and return a dictionary of protein sequences."""
     protein_sequences = {}
-    fasta_text = fasta_file.read().decode('utf-8')
-    fasta_stream = io.StringIO(fasta_text)
+    fasta_stream = io.StringIO(fasta_content)
 
     for record in SeqIO.parse(fasta_stream, "fasta"):
         protein_sequences[record.id] = str(record.seq)
@@ -51,10 +51,6 @@ def find_peptide_in_proteins(peptide: str, protein_sequences: Dict[str, str]) ->
 
 def find_colliding_peptides(df: pd.DataFrame, peptide: str, charge: int) -> set:
     """Find peptides that collide with the given peptide."""
-    if df is None:
-        st.error("The provided DataFrame is None. Please ensure data is loaded correctly.")
-        return set()
-
     matches = df[((df['x_peptide'].apply(lambda x: extract_peptide_and_charge(x) == (peptide, charge))) |
                   (df['y_peptide'].apply(lambda x: extract_peptide_and_charge(x) == (peptide, charge))))]
 
@@ -72,26 +68,41 @@ def peptide_twins_checker():
     """Render the Peptide Twins Checker page."""
     st.header("Peptide Twins Checker")
     st.markdown("""
-    a user could enter a peptide of interest and select the organism of interest, collision energy, and charge. The tool then maps this information to our database for checking whether the peptide collides with other peptides and then parse the provided fasta file in order to identify proteins where these potential collisions occur.
-    """)
-    # Add a note about the datasets and analysis
-    st.markdown("""
-    **Note:** The datasets used in this tool and the detailed analysis can be found in our paper. 
-    Please refer to the paper for more information on the methodology and the data sources.
-    """)
-
+    In the Peptide Twin Checker tool users can enter a peptide of interest whether the provided peptide is indistinguishable from any other peptide within a pre-calculated search space (e.g., human canonical proteome, human immunopeptidome)    """)
+    
     organism = st.selectbox("Select Universe:", options=list(DATASETS.keys()), key='Universe')
     energies = st.multiselect("Select Collision Energies:", options=list(DATASETS[organism].keys()), key='energies')
 
     peptide = st.text_input("Enter Peptide:", key='peptide', value="SDPYGIIR")
-    charge = st.number_input("Enter Charge:", min_value=1, step=1, value=2, key='charge')
 
-    fasta_file = st.file_uploader("Upload FASTA file with protein sequences", type=["fasta"])
+    # Automatically convert to uppercase if the user enters lowercase letters
+    if peptide != peptide.upper():
+        st.warning(f"Peptide sequence converted to uppercase: `{peptide.upper()}`")
+        peptide = peptide.upper()
+
+    charge = st.number_input("Enter Charge:", min_value=1, step=1, value=2, key='charge')
+    
+    fasta_option = st.radio("Upload FASTA for peptide-protein annotation", ("Upload File", "Use Default (Human Proteome)"))
+    fasta_file = None
+    fasta_content = ""
+    st.markdown("""The uploaded FASTA file is used to identify the proteins that contain the colliding peptides found in the selected dataset     """)   
+    if fasta_option == "Upload File":
+        fasta_file = st.file_uploader("Upload FASTA file with protein sequences", type=["fasta"])
+    else:
+        with st.spinner("Fetching default FASTA file..."):
+            response = requests.get(FASTA_URL)
+            if response.status_code == 200:
+                fasta_content = response.text
+            else:
+                st.error("Failed to load default FASTA file.")
+                return
 
     if st.button("Check twins"):
-        if peptide and fasta_file:
+        if peptide and (fasta_file or fasta_content):
             with st.spinner("Parsing FASTA file..."):
-                protein_sequences = parse_fasta(fasta_file)
+                if fasta_file:
+                    fasta_content = fasta_file.read().decode('utf-8')
+                protein_sequences = parse_fasta(fasta_content)
 
             colliding_info = {}
 
@@ -100,9 +111,6 @@ def peptide_twins_checker():
                 with st.spinner(f"Loading data for NCE {energy}..."):
                     try:
                         df = pd.read_csv(df_path, delimiter=',')
-                    except pd.errors.ParserError as e:
-                        st.error(f"Failed to parse the CSV file for NCE {energy}. Error: {e}")
-                        continue
                     except Exception as e:
                         st.error(f"An error occurred while loading the CSV file: {e}")
                         continue
@@ -130,4 +138,7 @@ def peptide_twins_checker():
             else:
                 st.success("No twin peptides detected in the selected energies.")
         else:
-            st.warning("Please enter a peptide, charge, and upload a FASTA file to check.")
+            st.warning("Please enter a peptide, charge, and ensure a FASTA file is available to check.")
+
+if __name__ == "__main__":
+    peptide_twins_checker()
