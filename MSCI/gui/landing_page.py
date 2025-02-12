@@ -38,7 +38,7 @@ def landing_page():
 
     st.subheader("Implementation and Example")
     st.write("""
-    **Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1V5KSpkkrjVg41eCOkBZkVR_nUqBrHPl_?usp=sharing)
+    **Open the Notebook**: Click on the following [link to Google Colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk)
     """)
 
     st.subheader("Contribution")
