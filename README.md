@@ -26,7 +26,7 @@ You can install MSCI directly using pip, which will also handle the necessary de
 Implementation and example 
 ==================
 
-**Open the Notebook**: Click on the following [Tutorial_google_colab](https://colab.research.google.com/drive/1CEUfmlnKh7i9KgWC6xVkZRxu6zTfjNQL?usp=sharing) 
+**Open the Notebook**: Click on the following [Tutorial_google_colab](https://colab.research.google.com/drive/1ny97RNgvnpD7ZrHW8TTRXWCAQvIcavkk) 
 
 
 
