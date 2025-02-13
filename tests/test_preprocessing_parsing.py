@@ -7,11 +7,11 @@ data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Example_dat
 
 @pytest.fixture
 def mgf_test_file():
-    return os.path.join(data_dir, "example.mgf")
+    return os.path.join(data_dir, "library_examples.mgf")
 
 @pytest.fixture
 def mzml_test_file():
-    return os.path.join(data_dir, "example.mzML")
+    return os.path.join(data_dir, "library_examples.mzML")
 
 def test_read_mgf_file(mgf_test_file):
     assert os.path.exists(mgf_test_file), f"File not found: {mgf_test_file}"  # Debugging
