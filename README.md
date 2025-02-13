@@ -20,7 +20,7 @@ You can install MSCI directly using pip, which will also handle the necessary de
 
  
 
-    pip install MSCI==0.2.1
+    pip install MSCI==0.2.0
 
 
 Implementation and example 
