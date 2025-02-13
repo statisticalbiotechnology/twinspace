@@ -1,4 +1,3 @@
-=======================
 MSCI
 =======================
 
@@ -39,10 +38,6 @@ License
 -------
 
 MSCI is released under the MIT License.
-
-.. raw:: html
-
-    <p><strong>Official Documentation available at:</strong> <a href="https://msci.readthedocs.io">MSCI Docs</a></p>
 
 
 
