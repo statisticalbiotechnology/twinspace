@@ -35,6 +35,6 @@ setup(
     test_suite='tests',
     tests_require=requirements,
     url='https://github.com/proteomicsunitcrg/MSCI',
-    version='0.2.1',
+    version='0.2.0',
     zip_safe=False,
 )
