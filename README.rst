@@ -1,7 +1,24 @@
 =======================
-MSCI: Mass Spectrometry Content Index
+MSCI
 =======================
 
+Introduction
+------------
+
+Peptide identification by mass spectrometry relies on the interpretation of fragmentation spectra based on:
+- The **m/z pattern** (mass-to-charge ratio),
+- **Relative intensities** of detected fragments,
+- **Retention time (RT)**.
+
+Given a proteome, we explored how many peptides generate highly similar fragmentation spectra with current MS methods.
+MSCI is a Python package built to assess the **information content of peptide fragmentation spectra**. 
+
+We aimed to calculate an **information-content index** for all peptides in a given proteome, allowing us to:
+- Design data acquisition strategies that maximize spectral diversity.
+- Prioritize the most informative fragment ions for peptide quantification.
+
+Main features
+-----
 The MSCI package offers functionalities for:
 
 - **Data Import**: Load proteomes and spectral libraries.
@@ -29,29 +46,5 @@ MSCI is released under the MIT License.
 
     <p><strong>Official Documentation available at:</strong> <a href="https://msci.readthedocs.io">MSCI Docs</a></p>
 
-Introduction
-------------
 
-Peptide identification by mass spectrometry relies on the interpretation of fragmentation spectra based on:
-- The **m/z pattern** (mass-to-charge ratio),
-- **Relative intensities** of detected fragments,
-- **Retention time (RT)**.
-
-Given a proteome, we explored how many peptides generate highly similar fragmentation spectra with current MS methods.
-MSCI is a Python package built to assess the **information content of peptide fragmentation spectra**. 
-
-We aimed to calculate an **information-content index** for all peptides in a given proteome, allowing us to:
-- Design data acquisition strategies that maximize spectral diversity.
-- Prioritize the most informative fragment ions for peptide quantification.
-
-Main Features
--------------
-
-- **Proteome & Spectral Library Handling**: Import, manage, and preprocess proteomic data.
-- **Peptide Spectra Prediction**: Simulate fragmentation spectra based on sequence information.
-- **Spectral Similarity Analysis**: Compare spectra using multiple similarity metrics.
-- **Fragmentation Plot Visualization**: Generate high-quality fragmentation spectra plots.
-- **Data Export & Reporting**: Save similarity results for further analysis.
-
-For detailed documentation, visit the `MSCI Documentation <https://msci.readthedocs.io>`_.
 
