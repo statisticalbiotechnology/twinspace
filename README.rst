@@ -13,9 +13,7 @@ Peptide identification by mass spectrometry relies on the interpretation of frag
 Given a proteome, we explored how many peptides generate highly similar fragmentation spectra with current MS methods.
 MSCI is a Python package built to assess the **information content of peptide fragmentation spectra**. 
 
-We aimed to calculate an **information-content index** for all peptides in a given proteome, allowing us to:
-- Design data acquisition strategies that maximize spectral diversity.
-- Prioritize the most informative fragment ions for peptide quantification.
+
 
 Main features
 -----
