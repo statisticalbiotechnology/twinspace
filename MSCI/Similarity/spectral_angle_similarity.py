@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd 
-import numpy as np 
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 from matchms.similarity import CosineGreedy
 
 def ndotproduct(x, y, m=0, n=0.5, na_rm=True):
@@ -17,9 +18,6 @@ def nspectraangle(x, y, m=0, n=0.5, na_rm=True):
 
 def _weightxy(x, y, m=0, n=0.5):
     return x**m * y**n
-
-import pandas as pd
-import numpy as np
 
 class joinPeaks:
     def __init__(self, tolerance=0, ppm=0):
@@ -142,3 +140,42 @@ def process_spectra_pairs_cosine(chunk, spectra, mz_irt_df, tolerance=0):
         })
 
     return pd.DataFrame(results)
+
+
+def process_single_pair(index_pair, spectra, mz_irt_df, tolerance=0, ppm=0, m=0, n=0.5):
+    """Process a single spectra pair."""
+    i, j = index_pair
+
+    x = spectra[i]
+    y = spectra[j]
+
+    x_df = pd.DataFrame({'mz': x.peaks.mz, 'intensities': x.peaks.intensities})
+    y_df = pd.DataFrame({'mz': y.peaks.mz, 'intensities': y.peaks.intensities})
+
+    matcher = joinPeaks(tolerance=tolerance, ppm=ppm)
+    x_matched, y_matched = matcher.match(x_df, y_df)
+
+    angle = nspectraangle(x_matched, y_matched, m=m, n=n)
+    
+    return {
+        'index1': i,
+        'index2': j,
+        'peptide 1': mz_irt_df.loc[i, 'Name'],
+        'peptide 2': mz_irt_df.loc[j, 'Name'],
+        'm/z 1': mz_irt_df.loc[i, 'MW'],
+        'm/z 2': mz_irt_df.loc[j, 'MW'],
+        'iRT 1': mz_irt_df.loc[i, 'iRT'],
+        'iRT 2': mz_irt_df.loc[j, 'iRT'],
+        'similarity_score': angle,  
+    }
+
+def process_spectra_pairs_parallel(chunk, spectra, mz_irt_df, tolerance=0, ppm=0, m=0, n=0.5):
+    """Process spectra pairs in parallel using ProcessPoolExecutor."""
+    num_workers = multiprocessing.cpu_count()  # Use all available CPUs
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = [executor.submit(process_single_pair, pair, spectra, mz_irt_df, tolerance, ppm, m, n) for pair in chunk]
+
+    results = [future.result() for future in futures]  # Collect results
+    return pd.DataFrame(results)
+

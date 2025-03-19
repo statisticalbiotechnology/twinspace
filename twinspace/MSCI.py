@@ -6,7 +6,7 @@ from MSCI.Preprocessing.Koina import PeptideProcessor
 from matchms.importing import load_from_msp
 from MSCI.Preprocessing.read_msp_file import read_msp_file
 from MSCI.Grouping_MS1.Grouping_mw_irt import process_peptide_combinations
-from MSCI.Similarity.spectral_angle_similarity import process_spectra_pairs
+from MSCI.Similarity.spectral_angle_similarity import process_spectra_pairs, process_spectra_pairs_parallel
 
 
 # Parse fasta file
@@ -57,7 +57,8 @@ Groups_df
 # Calculate the similarity within fragment tolerance
 Groups_df.columns = Groups_df.columns.str.strip()
 index_array = Groups_df[['index1','index2']].values.astype(int)
-result = process_spectra_pairs(index_array, spectra,  mz_irt_df, tolerance =0, ppm=10)
+#result = process_spectra_pairs(index_array, spectra,  mz_irt_df, tolerance =0, ppm=10)
+result = process_spectra_pairs_parallel(index_array, spectra,  mz_irt_df, tolerance =0, ppm=10)
 result.to_csv("output.csv", index=False)
 result
 
